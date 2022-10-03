@@ -6,7 +6,7 @@ module.exports = (address, port, client) => {
         const {data: response} = await axios.get(process.env.TWITCH_API_URL + `/helix/streams?user_login=${process.env.TWITCH_CHANNEL}`);
         
         const currentDate = new Date();
-        if(currentDate.getMinutes() % 10 != 0) return;
+        if(currentDate.getMinutes() % 15 != 0) return;
         if(response.data && response.data.length != 0) return;
         
 
