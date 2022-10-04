@@ -10,6 +10,6 @@ module.exports = (address, port, client) => {
         const {data: response} = await axios.get(process.env.TWITCH_API_URL + `/helix/streams?user_login=${process.env.TWITCH_CHANNEL}`);
         if(response.data && response.data.length != 0) return;
 
-        client.say(process.env.TWITCH_CHANNEL, "eggySip Remember to keep yourself peepoHappy hydrated eggyDrink chat");
+        client.say(process.env.TWITCH_CHANNEL, "eggySip Remember to keep yourself peepoHappy hydrated eggyDrink chat 💕");
     }, 60000);
 };
