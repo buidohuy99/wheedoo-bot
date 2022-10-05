@@ -7,7 +7,7 @@ module.exports = (address, port, client) => {
         const currentDate = new Date();
         const {data: response} = await axios.get(process.env.TWITCH_API_URL + `/helix/streams?user_login=${process.env.TWITCH_CHANNEL}`);
 
-        if(currentDate.getMinutes() % 30 != 0) return;
+        if(currentDate.getMinutes() % 20 != 0) return;
         if(response.data && response.data.length != 0) return;
 
         client.say(process.env.TWITCH_CHANNEL, "eggySip Remember to keep yourself peepoHappy hydrated eggyDrink chat 💕");
