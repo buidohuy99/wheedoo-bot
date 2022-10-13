@@ -3,12 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "APP_ENV='production' node ./bin/www",
-    "debug": "APP_ENV='dev' nodemon ./bin/www"
+    "start": "cross-env APP_ENV=production node ./bin/www",
+    "debug": "cross-env APP_ENV=dev nodemon ./bin/www"
   },
   "dependencies": {
     "axios": "^0.27.2",
     "cookie-parser": "~1.4.4",
+    "cross-env": "^7.0.3",
     "debug": "~2.6.9",
     "dotenv": "^16.0.3",
     "express": "~4.16.1",

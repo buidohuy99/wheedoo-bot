@@ -15,19 +15,34 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //Initialize tmi.js and connect
-const twitch_chat_client = require('./services/tmi-connector');
-global.sippingInterval = null;
+global.twitch_chat_client = require('./services/tmi-connector');
 global.twitch_access_token = null;
+
+global.reconnectingToTwitch = false;
+
+global.sippingInterval = null;
+global.enableSipping = true;
+global.message_schedules = {};
 
 // We shall pass the parameters which shall be required
 twitch_chat_client.on('connected', (address, port) => require('./services/connected-event-processor')(address, port, twitch_chat_client));
 twitch_chat_client.on('chat', (channel, userstate, message, self) => require('./services/message-event-processor')(channel, userstate, message, self, twitch_chat_client));
 twitch_chat_client.on('disconnected', (reason) => {
+  console.error(reason);
+  
   if(sippingInterval) {
     console.info('Ending sipping action');
     clearInterval(sippingInterval);
     sippingInterval = undefined;
   }
+
+  Object.entries(message_schedules).forEach(([key, value]) => {
+    clearInterval(value);
+    message_schedules[key] = undefined;
+  });
+});
+twitch_chat_client.on('reconnect', () => {
+  reconnectingToTwitch = true;
 });
 
 app.use('/', require('./routes/index'));

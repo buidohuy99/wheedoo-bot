@@ -1,8 +1,14 @@
 const axios = require('../functions/auth-axios');
 
-module.exports = (address, port, client) => {
+module.exports = async (address, port, client) => {
+    if(reconnectingToTwitch){
+        await client.join(process.env.TWITCH_CHANNEL);
+        reconnectingToTwitch = false;
+    }
+
     sippingInterval = setInterval(async () => {
         if(process.env.APP_ENV != 'production') return;
+        if(!enableSipping) return;
         
         const currentDate = new Date();
         const {data: response} = await axios.get(process.env.TWITCH_API_URL + `/helix/streams?user_login=${process.env.TWITCH_CHANNEL}`);
