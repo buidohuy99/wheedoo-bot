@@ -65,7 +65,7 @@ module.exports = (channel, userstate, message, self, client) => {
                 message_schedules[messageName] = undefined;
                 clearInterval(resetMessageInterval);
                 returnMessage(`\'${messageName}\' has ended its run successfully`, client);
-            }, scheduledTimeSpan * 1000);
+            }, scheduledTimeSpan * 1000 + 1000);
             returnMessage(`Successfully schedules \'${messageName}\' with an interval of ${scheduledInterval} seconds`, client);
             break;
 
