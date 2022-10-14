@@ -3,6 +3,7 @@ const axios = require('../functions/auth-axios');
 module.exports = async (address, port, client) => {
     if(reconnectingToTwitch){
         await client.join(process.env.TWITCH_CHANNEL);
+        await client.join(process.env.TWITCH_USERNAME);
         reconnectingToTwitch = false;
     }
 

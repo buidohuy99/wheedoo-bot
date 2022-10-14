@@ -1,19 +1,20 @@
 const returnError = (error, client) => {
     setTimeout(() => {
-        client.say(process.env.TWITCH_CHANNEL, `/me ${error}`);
+        client.say(process.env.TWITCH_USERNAME, `/me ${error}`);
     }, 1000);
 }
 
 const returnMessage = (message, client) => {
     setTimeout(() => {
-        client.say(process.env.TWITCH_CHANNEL, `/me ${message}`);
+        client.say(process.env.TWITCH_USERNAME, `/me ${message}`);
     }, 1000);
 }
 
 module.exports = (channel, userstate, message, self, client) => {
     if(process.env.APP_ENV != 'production') return;
-
-    if (userstate.username.toLowerCase() !== 'wheedoo') return;
+    
+    if(channel.toLowerCase() !== '#tectone') return;
+    if(userstate.username.toLowerCase() !== 'wheedoo') return;
     const prefix = message.substring(0, Math.min(4, message.length));
     if(prefix !== 'UwU/') return;
 
@@ -47,14 +48,18 @@ module.exports = (channel, userstate, message, self, client) => {
             if(isNaN(scheduledTimeSpan) || scheduledTimeSpan < 10){
                 returnError(`Scheduled timespan is not a number or is shorter than 10 seconds`, client); return; 
             }
+            let message = scheduledMessage;
+            const concatMessage = () => message = message.concat(' \udb40\udc00');
             message_schedules[messageName] = setInterval(() => {
-                client.say(process.env.TWITCH_CHANNEL, scheduledMessage);
+                client.say(process.env.TWITCH_CHANNEL, message);
+                concatMessage();
+                console.log(message);
             }, scheduledInterval * 1000);
             setTimeout(() => {
                 clearInterval(message_schedules[messageName]);
                 message_schedules[messageName] = undefined;
                 returnMessage(`\'${messageName}\' has ended its run successfully`, client);
-            }, scheduledTimeSpan * 1000);
+            }, scheduledTimeSpan * 1000 + 1000);
             returnMessage(`Successfully schedules \'${messageName}\' with an interval of ${scheduledInterval} seconds`, client);
             break;
 

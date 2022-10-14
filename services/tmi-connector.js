@@ -14,7 +14,7 @@ const client = new tmi.Client({
         password: `${process.env.TWITCH_OAUTH}`
     },
 
-    channels: [`${process.env.TWITCH_CHANNEL}`]
+    channels: [`${process.env.TWITCH_CHANNEL}`, `${process.env.TWITCH_USERNAME}`]
 });
 
 client.connect().catch(console.error);
