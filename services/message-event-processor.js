@@ -53,7 +53,6 @@ module.exports = (channel, userstate, message, self, client) => {
             message_schedules[messageName] = setInterval(() => {
                 client.say(process.env.TWITCH_CHANNEL, message);
                 concatMessage();
-                console.log(message);
             }, scheduledInterval * 1000);
             setTimeout(() => {
                 clearInterval(message_schedules[messageName]);
