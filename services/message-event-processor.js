@@ -50,15 +50,22 @@ module.exports = (channel, userstate, message, self, client) => {
             }
             let message = scheduledMessage;
             const concatMessage = () => message = message.concat(' \udb40\udc00');
+            const resetMessage = () => message = scheduledMessage;
             message_schedules[messageName] = setInterval(() => {
                 client.say(process.env.TWITCH_CHANNEL, message);
                 concatMessage();
             }, scheduledInterval * 1000);
+            const resetMessageInterval = setInterval(() => {
+                resetMessage();
+                console.log("Message resetted");
+            }, 30000);
+
             setTimeout(() => {
                 clearInterval(message_schedules[messageName]);
                 message_schedules[messageName] = undefined;
+                clearInterval(resetMessageInterval);
                 returnMessage(`\'${messageName}\' has ended its run successfully`, client);
-            }, scheduledTimeSpan * 1000 + 1000);
+            }, scheduledTimeSpan * 1000);
             returnMessage(`Successfully schedules \'${messageName}\' with an interval of ${scheduledInterval} seconds`, client);
             break;
 
