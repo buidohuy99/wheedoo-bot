@@ -13,7 +13,7 @@ const returnMessage = (message, client) => {
 module.exports = (channel, userstate, message, self, client) => {
     if(process.env.APP_ENV != 'production') return;
     
-    if(channel.toLowerCase() !== '#tectone') return;
+    if(channel.toLowerCase() !== '#wheedoo') return;
     if(userstate.username.toLowerCase() !== 'wheedoo') return;
     const prefix = message.substring(0, Math.min(4, message.length));
     if(prefix !== 'UwU/') return;
