@@ -108,6 +108,7 @@ module.exports = (channel, userstate, message, self, client) => {
                 const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
                 const emoteName = emotes[0].code;
                 if(Object.entries(currently_on_cooldown_emotes).some(([key,]) => key === emoteName)){
+                    current_spammed_messages[emoteName] = 0;
                     return;
                 }
                 const messageCount = current_spammed_messages[emoteName];
