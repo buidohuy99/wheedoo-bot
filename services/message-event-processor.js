@@ -2,7 +2,7 @@ const {returnError, returnMessage, postChatMessage} = require('../functions/post
 
 const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/message-schedule-function');
 
-const emoteParser = require('./tmi-emote-parse');
+const emoteParser = require('../utils/tmi-emote-parse');
 
 const chatMessageHasOnlyOneEmote = (message, userstate) => {
     const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
@@ -11,7 +11,7 @@ const chatMessageHasOnlyOneEmote = (message, userstate) => {
 }
  
 module.exports = (channel, userstate, message, self, client) => {
-    if(process.env.APP_ENV != 'production') return;
+    //if(process.env.APP_ENV != 'production') return;
 
     switch(channel.toLowerCase()){
         case '#wheedoo':
@@ -107,11 +107,11 @@ module.exports = (channel, userstate, message, self, client) => {
             if(chatMessageHasOnlyOneEmote(message, userstate)){
                 const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
                 const emoteName = emotes[0].code;
-                const messageCount = current_spammed_messages[emoteName];
-                current_spammed_messages[emoteName] = messageCount ? messageCount + 1 : 1;
                 if(Object.entries(currently_on_cooldown_emotes).some(([key,]) => key === emoteName)){
                     return;
                 }
+                const messageCount = current_spammed_messages[emoteName];
+                current_spammed_messages[emoteName] = messageCount ? messageCount + 1 : 1;
                 if(current_spammed_messages[emoteName] >= 5){
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {

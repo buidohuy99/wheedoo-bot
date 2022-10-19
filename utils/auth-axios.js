@@ -77,4 +77,6 @@ const default_response_interceptor = AuthAxios.interceptors.response.use(
     }
 );
 
-module.exports = AuthAxios;
+module.exports.axios_instance = AuthAxios;
+
+module.exports.refreshAccessToken = async() => await updateTwitchAccessToken();

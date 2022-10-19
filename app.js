@@ -37,7 +37,9 @@ global.current_spammed_messages = {};
 //#endregion
 
 //Initialize tmi.js and connect
-const twitch_chat_client = require('./services/tmi-connector');
+const twitch_chat_client = require("./utils/tmi-connector");
+//Initialize tmi-emote-parser
+require("./utils/tmi-emote-parse");
 // We shall pass the parameters which shall be required
 twitch_chat_client.on('connected', (address, port) => require('./services/connected-event-processor')(address, port, twitch_chat_client));
 twitch_chat_client.on('chat', (channel, userstate, message, self) => require('./services/message-event-processor')(channel, userstate, message, self, twitch_chat_client));
