@@ -102,7 +102,7 @@ module.exports = (channel, userstate, message, self, client) => {
             }
             //#endregion
             break;
-        case '#saucetheegg':
+        case '#tectone':
             //#region messages from tectone channel
             if(chatMessageHasOnlyOneEmote(message, userstate)){
                 const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
@@ -137,6 +137,7 @@ module.exports = (channel, userstate, message, self, client) => {
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {
                         currently_on_cooldown_emotes[emoteName] = undefined;
+                        current_spammed_messages[emoteName] = 0;
                     }, 30*1000);
                 }
                 
