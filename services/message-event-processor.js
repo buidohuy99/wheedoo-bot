@@ -11,7 +11,7 @@ const returnMessage = (message, client) => {
 }
 
 module.exports = (channel, userstate, message, self, client) => {
-    if(process.env.APP_ENV != 'production') return;
+    //if(process.env.APP_ENV != 'production') return;
     
     if(channel.toLowerCase() !== '#wheedoo') return;
     if(userstate.username.toLowerCase() !== 'wheedoo') return;
@@ -42,8 +42,8 @@ module.exports = (channel, userstate, message, self, client) => {
             if(message_schedules[messageName]){
                 returnError(`A schedule for \'${messageName}\' already exists, please schedule this message under a different name`, client); return; 
             } 
-            if(isNaN(scheduledInterval) || scheduledInterval < 2 || scheduledInterval > 86400){
-                returnError(`Scheduled interval is not a number or is not within the value range of 2 seconds to 86400 seconds`, client); return; 
+            if(isNaN(scheduledInterval) || scheduledInterval < 1.5 || scheduledInterval > 86400){
+                returnError(`Scheduled interval is not a number or is not within the value range of 1.5 seconds to 86400 seconds`, client); return; 
             }
             if(isNaN(scheduledTimeSpan) || scheduledTimeSpan < 10){
                 returnError(`Scheduled timespan is not a number or is shorter than 10 seconds`, client); return; 
@@ -57,7 +57,6 @@ module.exports = (channel, userstate, message, self, client) => {
             }, scheduledInterval * 1000);
             const resetMessageInterval = setInterval(() => {
                 resetMessage();
-                console.log("Message resetted");
             }, 30000 + 500);
 
             setTimeout(() => {
