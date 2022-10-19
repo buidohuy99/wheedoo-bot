@@ -11,7 +11,7 @@ const chatMessageHasOnlyOneEmote = (message, userstate) => {
 }
  
 module.exports = (channel, userstate, message, self, client) => {
-    //if(process.env.APP_ENV != 'production') return;
+    if(process.env.APP_ENV != 'production') return;
 
     switch(channel.toLowerCase()){
         case '#wheedoo':
