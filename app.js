@@ -34,6 +34,10 @@ global.message_schedules_info = {};
 //#region tectone channel
 global.currently_on_cooldown_emotes = {};
 global.current_spammed_messages = {};
+setInterval(() => {
+  if(Object.entries(currently_on_cooldown_emotes).length != 0) return;
+  current_spammed_messages = {};
+}, 30*1000);
 //#endregion
 
 //Initialize tmi.js and connect
