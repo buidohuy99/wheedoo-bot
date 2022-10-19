@@ -32,7 +32,7 @@ global.message_schedules_info = {};
 //#endregion
 
 //#region tectone channel
-global.current_echo_message = undefined;
+global.currently_on_cooldown_emotes = {};
 global.current_spammed_messages = {};
 //#endregion
 

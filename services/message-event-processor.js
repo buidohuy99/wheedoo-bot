@@ -109,17 +109,16 @@ module.exports = (channel, userstate, message, self, client) => {
                 const emoteName = emotes[0].code;
                 const messageCount = current_spammed_messages[emoteName];
                 current_spammed_messages[emoteName] = messageCount ? messageCount + 1 : 1;
-                if(current_echo_message == emoteName){
+                if(Object.entries(currently_on_cooldown_emotes).some(([key,]) => key === emoteName)){
                     return;
                 }
                 if(current_spammed_messages[emoteName] >= 5){
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {
-                        if(current_echo_message != emoteName) return;
+                        currently_on_cooldown_emotes[emoteName] = undefined;
                         current_spammed_messages = {};
-                        current_echo_message = undefined;
-                    }, 30*1000)
-                    current_echo_message = emoteName;
+                    }, 30*1000);
+                    currently_on_cooldown_emotes[emoteName] = true;
                     current_spammed_messages = {};
                 }
             }
