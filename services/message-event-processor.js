@@ -1,6 +1,14 @@
 const {returnError, returnMessage, postChatMessage} = require('../functions/post-message-function');
 
 const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/message-schedule-function');
+
+const emoteParser = require('./tmi-emote-parse');
+
+const chatMessageHasOnlyOneEmote = (message, userstate) => {
+    const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
+    if(emotes.length != 1) return false;
+    return true;
+}
  
 module.exports = (channel, userstate, message, self, client) => {
     if(process.env.APP_ENV != 'production') return;
@@ -43,11 +51,11 @@ module.exports = (channel, userstate, message, self, client) => {
                         returnError(`Scheduled timespan is not a number or is shorter than 10 seconds`, client); return; 
                     }
 
-                    let message = scheduledMessage;
-                    const concatMessage = () => message = message.concat(' \udb40\udc00');
-                    const resetMessage = () => message = scheduledMessage;
+                    let transformedMessage = scheduledMessage;
+                    const concatMessage = () => transformedMessage = transformedMessage.concat(' \udb40\udc00');
+                    const resetMessage = () => transformedMessage = scheduledMessage;
                     message_schedules[messageName] = setInterval(() => {
-                        postChatMessage(message, client);
+                        postChatMessage(transformedMessage, client);
                         concatMessage();
                     }, scheduledInterval * 1000);
                     reset_message_intervals[messageName] = setInterval(() => {
@@ -96,10 +104,24 @@ module.exports = (channel, userstate, message, self, client) => {
             break;
         case '#tectone':
             //#region messages from tectone channel
-            if(Object.entries(message_schedules_info).length == 0 
-            || Object.entries(message_schedules_info).every((value) => value.interval >= 30)){
-                // only process message if all intervals of scheduled messages >= 30 secs
-                
+            if(chatMessageHasOnlyOneEmote(message, userstate)){
+                const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
+                const emoteName = emotes[0].code;
+                const messageCount = current_spammed_messages[emoteName];
+                current_spammed_messages[emoteName] = messageCount ? messageCount + 1 : 1;
+                if(current_echo_message == emoteName){
+                    return;
+                }
+                if(current_spammed_messages[emoteName] >= 5){
+                    setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
+                    setTimeout(() => {
+                        if(current_echo_message != emoteName) return;
+                        current_spammed_messages = {};
+                        current_echo_message = undefined;
+                    }, 30*1000)
+                    current_echo_message = emoteName;
+                    current_spammed_messages = {};
+                }
             }
             //#endregion
             break;

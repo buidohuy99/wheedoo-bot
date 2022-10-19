@@ -16,8 +16,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const {clearAllMessageSchedules} = require('./functions/message-schedule-function');
 
-//Initialize tmi.js and connect
-global.twitch_chat_client = require('./services/tmi-connector');
 global.twitch_access_token = null;
 
 global.reconnectingToTwitch = false;
@@ -34,9 +32,12 @@ global.message_schedules_info = {};
 //#endregion
 
 //#region tectone channel
-
+global.current_echo_message = undefined;
+global.current_spammed_messages = {};
 //#endregion
 
+//Initialize tmi.js and connect
+const twitch_chat_client = require('./services/tmi-connector');
 // We shall pass the parameters which shall be required
 twitch_chat_client.on('connected', (address, port) => require('./services/connected-event-processor')(address, port, twitch_chat_client));
 twitch_chat_client.on('chat', (channel, userstate, message, self) => require('./services/message-event-processor')(channel, userstate, message, self, twitch_chat_client));
