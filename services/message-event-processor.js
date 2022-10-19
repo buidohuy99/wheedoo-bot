@@ -117,10 +117,10 @@ module.exports = (channel, userstate, message, self, client) => {
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {
                         currently_on_cooldown_emotes[emoteName] = undefined;
-                        current_spammed_messages = {};
+                        current_spammed_messages[emoteName] = 0;
                     }, 30*1000);
                     currently_on_cooldown_emotes[emoteName] = true;
-                    current_spammed_messages = {};
+                    current_spammed_messages[emoteName] = 0;
                 }
             }
             //#endregion
