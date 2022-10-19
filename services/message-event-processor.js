@@ -57,7 +57,7 @@ module.exports = (channel, userstate, message, self, client) => {
             }, scheduledInterval * 1000);
             const resetMessageInterval = setInterval(() => {
                 resetMessage();
-            }, 30000 + 500);
+            }, 30000 + 250);
 
             setTimeout(() => {
                 clearInterval(message_schedules[messageName]);
