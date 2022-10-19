@@ -112,7 +112,7 @@ module.exports = (channel, userstate, message, self, client) => {
                 }
                 const messageCount = current_spammed_messages[emoteName];
                 current_spammed_messages[emoteName] = messageCount ? messageCount + 1 : 1;
-                if(current_spammed_messages[emoteName] >= 5){
+                if(current_spammed_messages[emoteName] >= 3){
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {
                         currently_on_cooldown_emotes[emoteName] = undefined;
