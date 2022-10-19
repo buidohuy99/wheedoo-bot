@@ -6,12 +6,12 @@ const emoteParser = require('../utils/tmi-emote-parse');
 
 const chatMessageHasOnlyOneEmote = (message, userstate) => {
     const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
-    if(emotes.length != 1) return false;
+    if(emotes.length !== 1) return false;
     return true;
 }
  
 module.exports = (channel, userstate, message, self, client) => {
-    //if(process.env.APP_ENV != 'production') return;
+    if(process.env.APP_ENV != 'production') return;
 
     switch(channel.toLowerCase()){
         case '#wheedoo':
@@ -102,26 +102,44 @@ module.exports = (channel, userstate, message, self, client) => {
             }
             //#endregion
             break;
-        case '#tectone':
+        case '#saucetheegg':
             //#region messages from tectone channel
             if(chatMessageHasOnlyOneEmote(message, userstate)){
                 const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
                 const emoteName = emotes[0].code;
-                if(Object.entries(currently_on_cooldown_emotes).some(([key,]) => key === emoteName)){
-                    current_spammed_messages[emoteName] = 0;
+                if(currently_on_cooldown_emotes[emoteName]){
                     return;
                 }
                 const messageCount = current_spammed_messages[emoteName];
-                current_spammed_messages[emoteName] = messageCount ? messageCount + 1 : 1;
-                if(current_spammed_messages[emoteName] >= 3){
+                current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
+                if(!emote_reset_count_timeout[emoteName]){
+                    const reset_count_interval = setInterval(() => {
+                        emote_reset_count_timeout[emoteName].time_remaining--;
+                        if(emote_reset_count_timeout[emoteName].time_remaining === 0){
+                            clearInterval(emote_reset_count_timeout[emoteName].interval);
+                            emote_reset_count_timeout[emoteName] = undefined;
+                            current_spammed_messages[emoteName] = 0;
+                            return;
+                        }
+                    }, 1000);
+                    emote_reset_count_timeout[emoteName] = {
+                        time_remaining: 14,
+                        interval: reset_count_interval
+                    };
+                }else{
+                    emote_reset_count_timeout[emoteName].time_remaining += 14 - emote_reset_count_timeout[emoteName].time_remaining;
+                }
+                if(current_spammed_messages[emoteName] >= 5){
+                    currently_on_cooldown_emotes[emoteName] = true;
+                    current_spammed_messages[emoteName] = 0;
+                    clearInterval(emote_reset_count_timeout[emoteName].interval);
+                    emote_reset_count_timeout[emoteName] = undefined;
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {
                         currently_on_cooldown_emotes[emoteName] = undefined;
-                        current_spammed_messages[emoteName] = 0;
                     }, 30*1000);
-                    currently_on_cooldown_emotes[emoteName] = true;
-                    current_spammed_messages[emoteName] = 0;
                 }
+                
             }
             //#endregion
             break;
