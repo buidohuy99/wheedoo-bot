@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "cross-env APP_ENV=production node ./bin/www",
-    "debug": "cross-env APP_ENV=dev nodemon ./bin/www"
+    "start": "cross-env APP_ENV='production' node ./bin/www",
+    "debug": "cross-env APP_ENV='dev' nodemon ./bin/www"
   },
   "dependencies": {
     "axios": "^0.27.2",
