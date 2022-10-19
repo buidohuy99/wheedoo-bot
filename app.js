@@ -14,15 +14,28 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const {clearAllMessageSchedules} = require('./functions/message-schedule-function');
+
 //Initialize tmi.js and connect
 global.twitch_chat_client = require('./services/tmi-connector');
 global.twitch_access_token = null;
 
 global.reconnectingToTwitch = false;
 
+global.last_message_timestamp = undefined;
+
 global.sippingInterval = null;
 global.enableSipping = true;
+
+//#region message schedules
 global.message_schedules = {};
+global.reset_message_intervals = {};
+global.message_schedules_info = {};
+//#endregion
+
+//#region tectone channel
+
+//#endregion
 
 // We shall pass the parameters which shall be required
 twitch_chat_client.on('connected', (address, port) => require('./services/connected-event-processor')(address, port, twitch_chat_client));
@@ -36,10 +49,7 @@ twitch_chat_client.on('disconnected', (reason) => {
     sippingInterval = undefined;
   }
 
-  Object.entries(message_schedules).forEach(([key, value]) => {
-    clearInterval(value);
-    message_schedules[key] = undefined;
-  });
+  clearAllMessageSchedules();
 });
 twitch_chat_client.on('reconnect', () => {
   reconnectingToTwitch = true;
