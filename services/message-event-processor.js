@@ -20,7 +20,7 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
         const next = emote[1].occurrences[i + 1];
         if(current.end + 2 !== next.start) return false;
     }
-    if(emote[1].occurrences.length === 1 && emote[1].occurrences[0].start !== 0 && emote[1].occurrences[0].end !== message.length - 1) return false;
+    if(emote[1].occurrences.length === 1 && (emote[1].occurrences[0].start !== 0 || emote[1].occurrences[0].end !== message.length - 1)) return false;
     return true;
 }
  
