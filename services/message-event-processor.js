@@ -38,7 +38,7 @@ module.exports = (channel, userstate, message, self, client) => {
             const command = message.substring(0, commandSeparatorLocation < 0 ? message.length : commandSeparatorLocation);
             const argsString = commandSeparatorLocation < 0 ? '' : message.substring(commandSeparatorLocation + 1).trim();
 
-            switch(command.replace('UwU/','')){
+            switch(command.replace('!','')){
                 case 'message/schedule':
                     if(argsString.length <= 0) { returnError('Insufficient arguments: found 0 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
                     const indexOfFirstWhitespace = argsString.indexOf(' ');
