@@ -213,7 +213,7 @@ module.exports = (channel, userstate, message, self, client) => {
                 }else{
                     emote_reset_count_timeout[emoteName].time_remaining += 24 - emote_reset_count_timeout[emoteName].time_remaining;
                 }
-                if(current_spammed_messages[emoteName] >= 5){
+                if(current_spammed_messages[emoteName] >= 4){
                     currently_on_cooldown_emotes[emoteName] = true;
                     current_spammed_messages[emoteName] = 0;
                     clearInterval(emote_reset_count_timeout[emoteName].interval);
