@@ -35,6 +35,9 @@ global.message_schedules_info = {};
 global.currently_on_cooldown_emotes = {};
 global.current_spammed_messages = {};
 global.emote_reset_count_timeout = {};
+
+global.pyramid = [];
+global.current_pyramid_maker = undefined;
 //#endregion
 
 //Initialize tmi.js and connect

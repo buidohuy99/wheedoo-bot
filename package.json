@@ -16,8 +16,6 @@
     "http-errors": "~1.6.3",
     "jade": "^1.9.2",
     "morgan": "~1.9.1",
-    "tmi-emote-parse": "^2.0.0",
-    "tmi.js": "^1.8.5",
-    "twitch-js": "^2.0.0-beta.43"
+    "tmi.js": "^1.8.5"
   }
 }

@@ -1,24 +1,38 @@
 const {returnError, returnMessage, postChatMessage} = require('../functions/post-message-function');
-
 const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/message-schedule-function');
 
 const emoteParser = require('../utils/tmi-emote-parse');
 
-const chatMessageHasOnlyOneEmote = (message, userstate) => {
-    const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
+const chatMessageHasOnlyOneEmoteType = (message, userstate) => {
+    const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
     if(emotes.length !== 1) return false;
+    return true;
+}
+
+const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
+    const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
+    const emotes = Object.entries(emoteDict);
+    if(emotes.length !== 1) return false;
+    const emote = emotes[0];
+    //Check if emote only
+    for(let i = 0; i < emote[1].occurrences.length - 1; i++){
+        const current = emote[1].occurrences[i];
+        const next = emote[1].occurrences[i + 1];
+        if(current.end + 2 !== next.start) return false;
+    }
+    if(emote[1].occurrences.length === 1 && emote[1].occurrences[0].start !== 0) return false;
     return true;
 }
  
 module.exports = (channel, userstate, message, self, client) => {
     if(process.env.APP_ENV != 'production') return;
 
-    switch(channel.toLowerCase()){
-        case '#wheedoo':
+    switch(channel.toLowerCase().replace("#", "")){
+        case process.env.TWITCH_USERNAME:
             //#region messages from wheedoo channel
-            if(userstate.username.toLowerCase() !== 'wheedoo') return;
-            const prefix = message.substring(0, Math.min(4, message.length));
-            if(prefix !== 'UwU/') return;
+            if(userstate.username.toLowerCase() !== process.env.TWITCH_USERNAME) return;
+            const prefix = message.substring(0, Math.min(1, message.length));
+            if(prefix !== '!') return;
 
             const commandSeparatorLocation = message.indexOf(' ');
             const command = message.substring(0, commandSeparatorLocation < 0 ? message.length : commandSeparatorLocation);
@@ -102,11 +116,81 @@ module.exports = (channel, userstate, message, self, client) => {
             }
             //#endregion
             break;
-        case '#tectone':
-            //#region messages from tectone channel
-            if(chatMessageHasOnlyOneEmote(message, userstate)){
-                const emotes = emoteParser.getEmotes(message, userstate, process.env.TWITCH_CHANNEL);
-                const emoteName = emotes[0].code;
+        case process.env.TWITCH_CHANNEL:
+            //#region make pyramid
+            const insertNewPyramidLine = (occurrences, emoteName) => {
+                let near_last_idx = pyramid.length - 1;
+                if((near_last_idx < 0 && occurrences.length === 1)
+                ||near_last_idx >= 0){
+                    pyramid.push(occurrences.length);
+                }
+                //Check if the newly inserted element is with in +-1 range
+                if(near_last_idx >= 0){
+                    const difference = Math.abs(pyramid[near_last_idx] - pyramid[near_last_idx + 1]);
+                    if(difference !== 1){
+                        const lastElement = pyramid[near_last_idx + 1];
+                        if(lastElement === 1){
+                            pyramid = [lastElement];
+                        }else{
+                            pyramid = [];
+                            current_pyramid_maker = undefined;
+                        }
+                        console.log(pyramid);
+                        return;
+                    }
+                }
+                console.log(pyramid);
+                //Check if the current state pyramid is a proper pyramid
+                if(pyramid.length % 2 === 0 || pyramid.length < 3) return;
+                const mid = Math.floor(pyramid.length / 2);
+                const pyramid_width = pyramid[mid];
+                let leftPointer = mid - 1;
+                let rightPointer = mid + 1;
+                let isPyramidComplete = true;
+                while(leftPointer >= 0 && rightPointer < pyramid.length){
+                    if(pyramid[leftPointer] !== pyramid[rightPointer]){
+                        isPyramidComplete = false;
+                        break;
+                    }
+                    leftPointer--;
+                    rightPointer++;
+                }
+                if(isPyramidComplete){
+                    if(pyramid_width >= 3){
+                        postChatMessage(`/me POGGIES Nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt~ elisSmile`, client);
+                    }
+                    const lastElement = pyramid[near_last_idx + 1];
+                    if(lastElement === 1){
+                        pyramid = [lastElement];
+                    }else{
+                        pyramid = [];
+                        current_pyramid_maker = undefined;
+                    }
+                    return;
+                }
+            };
+            if(chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType(message, userstate)){
+                const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
+                const emote = emotes[0];
+                const {occurrences} = emote[1];
+                if(userstate.username.toLowerCase() !== current_pyramid_maker){
+                    pyramid = [];
+                    current_pyramid_maker = occurrences.length === 1 ? userstate.username.toLowerCase() : undefined;
+                }
+                if(current_pyramid_maker && userstate.username.toLowerCase() === current_pyramid_maker)
+                {   
+                    insertNewPyramidLine(occurrences, emote[0]);
+                }
+            }else{
+                pyramid = [];
+                current_pyramid_maker = undefined;
+            }
+            //#endregion
+            //#region reaction when others mass react
+            if(chatMessageHasOnlyOneEmoteType(message, userstate) && pyramid.length < 2){
+                const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
+                const emote = emotes[0];
+                const emoteName = emote[0];
                 if(currently_on_cooldown_emotes[emoteName]){
                     return;
                 }
@@ -117,26 +201,26 @@ module.exports = (channel, userstate, message, self, client) => {
                         emote_reset_count_timeout[emoteName].time_remaining--;
                         if(emote_reset_count_timeout[emoteName].time_remaining === 0){
                             clearInterval(emote_reset_count_timeout[emoteName].interval);
-                            emote_reset_count_timeout[emoteName] = undefined;
+                            delete emote_reset_count_timeout[emoteName];
                             current_spammed_messages[emoteName] = 0;
                             return;
                         }
                     }, 1000);
                     emote_reset_count_timeout[emoteName] = {
-                        time_remaining: 14,
+                        time_remaining: 24,
                         interval: reset_count_interval
                     };
                 }else{
-                    emote_reset_count_timeout[emoteName].time_remaining += 14 - emote_reset_count_timeout[emoteName].time_remaining;
+                    emote_reset_count_timeout[emoteName].time_remaining += 24 - emote_reset_count_timeout[emoteName].time_remaining;
                 }
                 if(current_spammed_messages[emoteName] >= 5){
                     currently_on_cooldown_emotes[emoteName] = true;
                     current_spammed_messages[emoteName] = 0;
                     clearInterval(emote_reset_count_timeout[emoteName].interval);
-                    emote_reset_count_timeout[emoteName] = undefined;
+                    delete emote_reset_count_timeout[emoteName];
                     setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
                     setTimeout(() => {
-                        currently_on_cooldown_emotes[emoteName] = undefined;
+                        delete currently_on_cooldown_emotes[emoteName];
                         current_spammed_messages[emoteName] = 0;
                     }, 30*1000);
                 }
