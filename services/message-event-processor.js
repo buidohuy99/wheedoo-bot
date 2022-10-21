@@ -23,8 +23,15 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     if(emote[1].occurrences.length === 1 && (emote[1].occurrences[0].start !== 0 || emote[1].occurrences[0].end !== message.length - 1)) return false;
     return true;
 }
+
+const chatMessage_withoutCompEmotes_hasOnlyOneEmote = (message, userstate) => {
+    const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
+    const complementaryEmotes = emoteParser.getAllComplementaryEmotes(process.env.TWITCH_CHANNEL);
+
+    
+}
  
-module.exports = (channel, userstate, message, self, client) => {
+module.exports = async (channel, userstate, message, self, client) => {
     if(process.env.APP_ENV != 'production') return;
 
     switch(channel.toLowerCase().replace("#", "")){
@@ -208,11 +215,11 @@ module.exports = (channel, userstate, message, self, client) => {
                         }
                     }, 1000);
                     emote_reset_count_timeout[emoteName] = {
-                        time_remaining: (emote_cooldown - 5) - 1,
+                        time_remaining: Math.floor(emote_cooldown/2),
                         interval: reset_count_interval
                     };
                 }else{
-                    emote_reset_count_timeout[emoteName].time_remaining += (emote_cooldown - 5) - 1 - emote_reset_count_timeout[emoteName].time_remaining;
+                    emote_reset_count_timeout[emoteName].time_remaining += Math.floor(emote_cooldown/2) - emote_reset_count_timeout[emoteName].time_remaining;
                 }
                 const messagesBeforeReaction = channel_live_status && channel_viewer_count >= 3500 ? 6 : 4; 
                 if(current_spammed_messages[emoteName] >= messagesBeforeReaction){

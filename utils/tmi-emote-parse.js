@@ -1,6 +1,8 @@
 // 🟦 Require the Module
 const emoteParser = require("./emote-parser");
 const {refreshAccessToken} = require("./auth-axios");
+const fs = require("fs");
+const pth = require("path");
 
 // 🟦 Set debug state and add event handlers (optional)
 emoteParser.setDebug(true);
@@ -103,6 +105,24 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
             gotEmotes[code].occurrences.sort(compareEnd);
         }
     })
+
+    return gotEmotes;
+}
+
+module.exports.getAllComplementaryEmotes = (channel) => {
+    const gotEmotes = [];
+    if(fs.existsSync(`./complementary-emotes/global.compemotes`)){
+        //Get global complementary emotes
+        const data = fs.readFileSync(pth.join(__dirname, `complementary-emotes/global.compemotes`));
+        const emotes = data.toString().split(/[\s,]+/);
+        gotEmotes.push(emotes);
+    }
+
+    if(fs.existsSync(`./complementary-emotes/${channel}.compemotes`)){ 
+        const data = fs.readFileSync(pth.join(__dirname, `complementary-emotes/${channel}.compemotes`));
+        const femotes = data.toString().split(/[\s,]+/);
+        gotEmotes.push(femotes);
+    }
 
     return gotEmotes;
 }
