@@ -27,7 +27,7 @@ module.exports = async (address, port, client) => {
         if(response.data && response.data.length != 0) {
             //Channel is live
             channel_live_status = true;
-            channel_viewer_count = data[0].viewer_count;
+            channel_viewer_count = response.data[0].viewer_count;
         }else if (response.data){
             //Channel is not live
             channel_live_status = false;
