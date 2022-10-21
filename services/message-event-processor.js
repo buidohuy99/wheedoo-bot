@@ -188,7 +188,7 @@ module.exports = (channel, userstate, message, self, client) => {
             //#endregion
             //#region reaction when others mass react
             if(chatMessageHasOnlyOneEmoteType(message, userstate) && pyramid.length < 2 && channel_live_status !== undefined){
-                const emote_cooldown = channel_live_status ? 20 : 30;
+                const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 20 : 30;
                 const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
                 const emote = emotes[0];
                 const emoteName = emote[0];
@@ -214,7 +214,7 @@ module.exports = (channel, userstate, message, self, client) => {
                 }else{
                     emote_reset_count_timeout[emoteName].time_remaining += (emote_cooldown - 5) - 1 - emote_reset_count_timeout[emoteName].time_remaining;
                 }
-                const messagesBeforeReaction = channel_live_status ? 6 : 4; 
+                const messagesBeforeReaction = channel_live_status && channel_viewer_count >= 3500 ? 6 : 4; 
                 if(current_spammed_messages[emoteName] >= messagesBeforeReaction){
                     currently_on_cooldown_emotes[emoteName] = true;
                     current_spammed_messages[emoteName] = 0;

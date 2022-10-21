@@ -23,6 +23,7 @@ global.reconnectingToTwitch = false;
 global.last_message_timestamp = undefined;
 
 global.channel_live_status = undefined;
+global.channel_viewer_count = undefined;
 global.checkLiveInterval = null;
 
 global.sippingInterval = null;

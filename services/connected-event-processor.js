@@ -27,12 +27,15 @@ module.exports = async (address, port, client) => {
         if(response.data && response.data.length != 0) {
             //Channel is live
             channel_live_status = true;
+            channel_viewer_count = data[0].viewer_count;
         }else if (response.data){
             //Channel is not live
             channel_live_status = false;
+            channel_viewer_count = undefined;
         }else{
             //Error
             channel_live_status = undefined;
+            channel_viewer_count = undefined;
         }
     }, 30*1000);
 };
