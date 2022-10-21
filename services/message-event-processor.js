@@ -188,7 +188,7 @@ module.exports = (channel, userstate, message, self, client) => {
             //#endregion
             //#region reaction when others mass react
             if(chatMessageHasOnlyOneEmoteType(message, userstate) && pyramid.length < 2 && channel_live_status !== undefined){
-                const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 20 : 30;
+                const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 25 : 30;
                 const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
                 const emote = emotes[0];
                 const emoteName = emote[0];
