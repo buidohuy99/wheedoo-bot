@@ -22,6 +22,9 @@ global.reconnectingToTwitch = false;
 
 global.last_message_timestamp = undefined;
 
+global.channel_live_status = undefined;
+global.checkLiveInterval = null;
+
 global.sippingInterval = null;
 global.enableSipping = true;
 
@@ -54,6 +57,12 @@ twitch_chat_client.on('disconnected', (reason) => {
     console.info('Ending sipping action');
     clearInterval(sippingInterval);
     sippingInterval = undefined;
+  }
+
+  if(checkLiveInterval) {
+    console.info('Ending check live action');
+    clearInterval(checkLiveInterval);
+    checkLiveInterval = undefined;
   }
 
   clearAllMessageSchedules();
