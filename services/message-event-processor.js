@@ -159,7 +159,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                 }
                 if(isPyramidComplete){
                     if(pyramid_width >= 3){
-                        postChatMessage(`/me POGGIES Nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt~ elisSmile`, client);
+                        postChatMessage(`/me POGGIES UWAAA~, nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt! HYPER`, client);
                     }
                     const lastElement = pyramid[near_last_idx + 1];
                     if(lastElement === 1){
@@ -194,6 +194,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                 const increase_emote_count = (emoteName) => {
                     const messageCount = current_spammed_messages[emoteName];
                     current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
+                    const time_remaining = channel_live_status ? Math.floor(emote_cooldown/2) : emote_cooldown * 10;
                     if(!emote_reset_count_timeout[emoteName]){
                         const reset_count_interval = setInterval(() => {
                             emote_reset_count_timeout[emoteName].time_remaining--;
@@ -206,11 +207,11 @@ module.exports = async (channel, userstate, message, self, client) => {
                             }
                         }, 1000);
                         emote_reset_count_timeout[emoteName] = {
-                            time_remaining: Math.floor(emote_cooldown/2),
+                            time_remaining: time_remaining,
                             interval: reset_count_interval
                         };
                     }else{
-                        emote_reset_count_timeout[emoteName].time_remaining += Math.floor(emote_cooldown/2) - emote_reset_count_timeout[emoteName].time_remaining;
+                        emote_reset_count_timeout[emoteName].time_remaining += time_remaining - emote_reset_count_timeout[emoteName].time_remaining;
                     }
                 }
                 const build_emote_combinations = (emote) => {
@@ -277,7 +278,6 @@ module.exports = async (channel, userstate, message, self, client) => {
                     build_emote_combinations(emote);
                     exec_cooldown_if_emote_count_enough(emote, timeoutBeforePostingMessage, (newTimeout) => { timeoutBeforePostingMessage = newTimeout}, client);
                 });
-                
             }
             //#endregion
             break;
