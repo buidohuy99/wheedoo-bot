@@ -122,7 +122,14 @@ const getAllComplementaryEmotes = (channel) => {
     if(fs.existsSync(pth.join(__dirname,`complementary-emotes/${channel}-compemotes.json`))){ 
         const data = fs.readFileSync(pth.join(__dirname, `complementary-emotes/${channel}-compemotes.json`));
         const femotes = JSON.parse(data.toString());
-        gotEmotes = gotEmotes.concat(femotes);
+        femotes.forEach((item) => {
+            const alreadyIn = gotEmotes.findIndex(e => e.name === item.name);
+            if(alreadyIn !== -1){
+                gotEmotes[alreadyIn] = item;
+                return;
+            }
+            gotEmotes.push(item);
+        });
     }
 
     return gotEmotes;

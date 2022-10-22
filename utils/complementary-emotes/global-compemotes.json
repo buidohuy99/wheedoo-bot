@@ -37,5 +37,140 @@
     },
     {
         "name": "RainTime"
+    },
+    {
+        "name": "DrumTime"
+    },
+    {
+        "name": "HyperClap",
+        "compPos": "right"
+    },
+    {
+        "name": "SaxTime",
+        "compPos": "right"
+    },
+    {
+        "name": "ViolinTime",
+        "compPos": "right"
+    },
+    {
+        "name": "Tssk",
+        "compPos": "right"
+    },
+    {
+        "name": "EDM",
+        "compPos": "right"
+    },
+    {
+        "name": "LeftHand",
+        "compPos": "left"
+    },
+    {
+        "name": "RightHand",
+        "compPos": "right"
+    },
+    {
+        "name": "SALAMI",
+        "compPos": "right"
+    },
+    {
+        "name": "Thinking1",
+        "compPos": "left"
+    },
+    {
+        "name": "BOP",
+        "compPos": "left"
+    },
+    {
+        "name": "FBBlock",
+        "compPos": "right"
+    },
+    {
+        "name": "FBCatch",
+        "compPos": "right"
+    },
+    {
+        "name": "FBPass",
+        "compPos": "left"
+    },
+    {
+        "name": "HSCheers",
+        "compPos": "left"
+    },
+    {
+        "name": "HSWP",
+        "compPos": "left"
+    },
+    {
+        "name": "ImTyping",
+        "compPos": "right"
+    },
+    {
+        "name": "MercyWing1",
+        "compPos": "left"
+    },
+    {
+        "name": "MercyWing2",
+        "compPos": "right"
+    },
+    {
+        "name": "SingsMic",
+        "compPos": "left"
+    },
+    {
+        "name": "cvHazmat",
+        "compPos": "right"
+    },
+    {
+        "name": "cvMask",
+        "compPos": "right"
+    },
+    {
+        "name": "cvL",
+        "compPos": "left"
+    },
+    {
+        "name": "cvR",
+        "compPos": "right"
+    },
+    {
+        "name": "Clap2",
+        "compPos": "left"
+    },
+    {
+        "name": "CrayonTime",
+        "compPos": "right"
+    },
+    {
+        "name": "GuitarTime",
+        "compPos": "right"
+    },
+    {
+        "name": "nymnCorn",
+        "compPos": "right"
+    },
+    {
+        "name": "PETPET",
+        "compPos": "right"
+    },
+    {
+        "name": "PianoTime",
+        "compPos": "right"
+    },
+    {
+        "name": "SteerR",
+        "compPos": "right"
+    },
+    {
+        "name": "TeaTime",
+        "compPos": "right"
+    },
+    {
+        "name": "WineTime",
+        "compPos": "right"
+    },
+    {
+        "name": "SirSword",
+        "compPos": "right"
     }
 ]
