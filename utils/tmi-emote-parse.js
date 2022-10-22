@@ -189,7 +189,7 @@ module.exports.extractEmoteGroups = (message, userstate, channel) => {
                     }];
                 }else{
                     allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`] = 
-                    [...allEmotesWithCompEmotesRefs[emoteIdx].compRefs[currentEmoteOccurrence], {
+                    [...allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`], {
                         name: emote.name,
                         start: occ.start,
                         end: occ.end
