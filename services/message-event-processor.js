@@ -3,12 +3,6 @@ const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/m
 
 const emoteParser = require('../utils/tmi-emote-parse');
 
-const chatMessageHasOnlyOneEmoteType = (message, userstate) => {
-    const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
-    if(emotes.length !== 1) return false;
-    return true;
-}
-
 const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
     const emotes = Object.entries(emoteDict);
@@ -22,13 +16,6 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     }
     if(emote[1].occurrences.length === 1 && (emote[1].occurrences[0].start !== 0 || emote[1].occurrences[0].end !== message.length - 1)) return false;
     return true;
-}
-
-const chatMessage_withoutCompEmotes_hasOnlyOneEmote = (message, userstate) => {
-    const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
-    const complementaryEmotes = emoteParser.getAllComplementaryEmotes(process.env.TWITCH_CHANNEL);
-
-    
 }
  
 module.exports = async (channel, userstate, message, self, client) => {
@@ -92,6 +79,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                         clearMessageSchedule(messageName);
                         returnMessage(`\'${messageName}\' has ended its run successfully`, client);
                     }, scheduledTimeSpan * 1000 + 1000);
+                    toggle_emote_reaction = false;
                     returnMessage(`Successfully schedules \'${messageName}\' with an interval of ${scheduledInterval} seconds`, client);
                     break;
 
@@ -99,11 +87,13 @@ module.exports = async (channel, userstate, message, self, client) => {
                     if(argsString.length <= 0) { returnError('Insufficient arguments: found 0 argument(s)', client); return; }
                     if(!message_schedules[argsString]) { returnError(`Schedule named \'${argsString}\' cannot be found`, client); return; }
                     clearMessageSchedule(argsString);
+                    toggle_emote_reaction = true;
                     returnMessage(`Successfully unschedules \'${argsString}\'`, client);
                     break;
 
                 case 'messages/clear-all':
                     clearAllMessageSchedules();
+                    toggle_emote_reaction = true;
                     returnMessage(`Successfully clears all message schedules`, client);
                     break;
 
@@ -117,6 +107,11 @@ module.exports = async (channel, userstate, message, self, client) => {
                     returnMessage(`Successfully disables hydrate reminder`, client);
                     break;
 
+                case 'emote-reaction/toggle':
+                    toggle_emote_reaction = !toggle_emote_reaction;
+                    returnMessage(`Successfully ${toggle_emote_reaction ? "enables" : "disables"} emote reaction function`, client);
+                    break;
+
                 default:
                     returnError('Command cannot be identified', client);
                     break;
@@ -124,7 +119,7 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             break;
         case process.env.TWITCH_CHANNEL:
-            //#region make pyramid
+            //#region pyramid evaluator
             const insertNewPyramidLine = (occurrences, emoteName) => {
                 let near_last_idx = pyramid.length - 1;
                 if((near_last_idx < 0 && occurrences.length === 1)
@@ -194,45 +189,94 @@ module.exports = async (channel, userstate, message, self, client) => {
             }
             //#endregion
             //#region reaction when others mass react
-            if(chatMessageHasOnlyOneEmoteType(message, userstate) && pyramid.length < 2 && channel_live_status !== undefined){
-                const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 25 : 30;
-                const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
-                const emote = emotes[0];
-                const emoteName = emote[0];
-                if(currently_on_cooldown_emotes[emoteName]){
-                    return;
+            const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
+            if(chat_has_emotes && pyramid.length < 2 && channel_live_status !== undefined && toggle_emote_reaction){
+                const increase_emote_count = (emoteName) => {
+                    const messageCount = current_spammed_messages[emoteName];
+                    current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
+                    if(!emote_reset_count_timeout[emoteName]){
+                        const reset_count_interval = setInterval(() => {
+                            emote_reset_count_timeout[emoteName].time_remaining--;
+                            if(emote_reset_count_timeout[emoteName].time_remaining === 0){
+                                clearInterval(emote_reset_count_timeout[emoteName].interval);
+                                delete emote_reset_count_timeout[emoteName];
+                                delete current_spammed_messages[emoteName];
+                                delete emote_combinations[emoteName];
+                                return;
+                            }
+                        }, 1000);
+                        emote_reset_count_timeout[emoteName] = {
+                            time_remaining: Math.floor(emote_cooldown/2),
+                            interval: reset_count_interval
+                        };
+                    }else{
+                        emote_reset_count_timeout[emoteName].time_remaining += Math.floor(emote_cooldown/2) - emote_reset_count_timeout[emoteName].time_remaining;
+                    }
                 }
-                const messageCount = current_spammed_messages[emoteName];
-                current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
-                if(!emote_reset_count_timeout[emoteName]){
-                    const reset_count_interval = setInterval(() => {
-                        emote_reset_count_timeout[emoteName].time_remaining--;
-                        if(emote_reset_count_timeout[emoteName].time_remaining === 0){
-                            clearInterval(emote_reset_count_timeout[emoteName].interval);
-                            delete emote_reset_count_timeout[emoteName];
-                            current_spammed_messages[emoteName] = 0;
-                            return;
+                const build_emote_combinations = (emote) => {
+                    emote.occurrences.forEach((item) => {
+                        const mainEmote = {
+                            name: emote.name,
+                            start: item.start,
+                            end: item.end
                         }
-                    }, 1000);
-                    emote_reset_count_timeout[emoteName] = {
-                        time_remaining: Math.floor(emote_cooldown/2),
-                        interval: reset_count_interval
-                    };
-                }else{
-                    emote_reset_count_timeout[emoteName].time_remaining += Math.floor(emote_cooldown/2) - emote_reset_count_timeout[emoteName].time_remaining;
+                        if(!emote_combinations[emote.name]){
+                            emote_combinations[emote.name] = new Set();
+                        }
+                        if(emote.compRefs && emote.compRefs[`${item.start}-${item.end}`])
+                        {
+                            const allEmotesArray = [mainEmote, ...emote.compRefs[`${item.start}-${item.end}`]];
+                            allEmotesArray.sort((a,b) => {return a.end - b.end;});
+                            const resultingComb = allEmotesArray.map((item) => item.name).join(" ");
+                            emote_combinations[emote.name].add(resultingComb); 
+                        }else{
+                            emote_combinations[emote.name].add(emote.name);
+                        }
+                    });
                 }
-                const messagesBeforeReaction = channel_live_status && channel_viewer_count >= 3500 ? 6 : 4; 
-                if(current_spammed_messages[emoteName] >= messagesBeforeReaction){
-                    currently_on_cooldown_emotes[emoteName] = true;
-                    current_spammed_messages[emoteName] = 0;
-                    clearInterval(emote_reset_count_timeout[emoteName].interval);
-                    delete emote_reset_count_timeout[emoteName];
-                    setTimeout(() => postChatMessage(emoteName + ' \udb40\udc00', client), 1000);
-                    setTimeout(() => {
-                        delete currently_on_cooldown_emotes[emoteName];
-                        current_spammed_messages[emoteName] = 0;
-                    }, emote_cooldown*1000);
+                const exec_cooldown_if_emote_count_enough = (emote, timeoutBeforePostingMessage, updateTimeoutBeforePostingMessage, client) => { 
+                    const messagesBeforeReaction = channel_live_status && channel_viewer_count >= 3500 ? 6 : 4; 
+                    if(current_spammed_messages[emote.name] >= messagesBeforeReaction){
+                        currently_on_cooldown_emotes[emote.name] = true;
+                        clearInterval(emote_reset_count_timeout[emote.name].interval);
+                        delete emote_reset_count_timeout[emote.name];
+                        //Output all possible combinations typed
+                        let timeout = timeoutBeforePostingMessage;
+                        const emote_combs_itr = emote_combinations[emote.name].values();
+                        let emote_comb = emote_combs_itr.next();
+                        let emoteCombsWithTimeout = [];
+                        while(!emote_comb.done){
+                            const emoteComb = emote_comb.value;
+                            emoteCombsWithTimeout.push({
+                                comb: emoteComb,
+                                timeout: timeout
+                            });
+                            timeout += 1000;
+                            emote_comb = emote_combs_itr.next();
+                        }
+                        updateTimeoutBeforePostingMessage(timeout);
+                        emoteCombsWithTimeout.forEach(item => setTimeout(() => postChatMessage(item.comb + ' \udb40\udc00', client), item.timeout));
+                        delete emote_combinations[emote.name];
+                        setTimeout(() => {
+                            delete currently_on_cooldown_emotes[emote.name];
+                            delete current_spammed_messages[emote.name];
+                        }, emote_cooldown*1000);
+                    }
                 }
+
+                const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 25 : 30;
+                const emotesToIncreaseCount = emoteParser.extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
+                //Order emote by order of appearance in message
+                emotesToIncreaseCount.sort((emote1, emote2) => emote1.occurrences[0].end - emote2.occurrences[0].end);
+                let timeoutBeforePostingMessage = 500;
+                emotesToIncreaseCount.forEach((emote) => {
+                    if(currently_on_cooldown_emotes[emote.name]){
+                        return;
+                    }
+                    increase_emote_count(emote.name);
+                    build_emote_combinations(emote);
+                    exec_cooldown_if_emote_count_enough(emote, timeoutBeforePostingMessage, (newTimeout) => { timeoutBeforePostingMessage = newTimeout}, client);
+                });
                 
             }
             //#endregion

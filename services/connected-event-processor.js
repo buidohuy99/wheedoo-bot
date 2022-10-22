@@ -21,9 +21,8 @@ module.exports = async (address, port, client) => {
     }, 60000);
 
     checkLiveInterval = setInterval(async() => {
-        if(process.env.APP_ENV != 'production') return;
         const {data: response} = await axios_instance.get(process.env.TWITCH_API_URL + `/helix/streams?user_login=${process.env.TWITCH_CHANNEL}`);
-
+        
         if(response.data && response.data.length != 0) {
             //Channel is live
             channel_live_status = true;

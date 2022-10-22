@@ -1,0 +1,41 @@
+[
+    {
+        "name": "SpeedL",
+        "compPos": "left"
+    },
+    {
+        "name": "SpeedR"
+    },
+    {
+        "name": "SALAMI"
+    },
+    {
+        "name": "BobaTime"
+    },
+    {
+        "name": "Clap"
+    },
+    {
+        "name": "DanceTime1",
+        "compPos": "left"
+    },
+    {
+        "name": "DanceTime2"
+    },
+    {
+        "name": "Thinking1",
+        "compPos": "left"
+    },
+    {
+        "name": "Thinking2"
+    },
+    {
+        "name": "SmokeTime"
+    },
+    {
+        "name": "Spray"
+    },
+    {
+        "name": "RainTime"
+    }
+]

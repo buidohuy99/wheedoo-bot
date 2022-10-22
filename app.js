@@ -20,8 +20,6 @@ global.twitch_access_token = null;
 
 global.reconnectingToTwitch = false;
 
-global.last_message_timestamp = undefined;
-
 global.channel_live_status = undefined;
 global.channel_viewer_count = undefined;
 global.checkLiveInterval = null;
@@ -39,6 +37,8 @@ global.message_schedules_info = {};
 global.currently_on_cooldown_emotes = {};
 global.current_spammed_messages = {};
 global.emote_reset_count_timeout = {};
+global.emote_combinations = {};
+global.toggle_emote_reaction = true;
 
 global.pyramid = [];
 global.current_pyramid_maker = undefined;
