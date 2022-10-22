@@ -172,5 +172,9 @@
     {
         "name": "SirSword",
         "compPos": "right"
-    }
+    },
+    {
+        "name": "pepeGun",
+        "compPos": "right"
+    },
 ]

@@ -9,6 +9,10 @@
     },
     {
         "name": "CLM",
-        "compPos": "right"
+        "compPos": "left"
+    },
+    {
+        "name": "pepeGun",
+        "compPos": "left"
     }
 ]
