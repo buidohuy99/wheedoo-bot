@@ -21,6 +21,7 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
  
 module.exports = async (channel, userstate, message, self, client) => {
     //if(process.env.APP_ENV != 'production') return;
+    toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
 
     switch(channel.toLowerCase().replace("#", "")){
         case process.env.TWITCH_USERNAME:
@@ -192,7 +193,6 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             //#region reaction when others mass react
             const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
-            toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
             if(chat_has_emotes && pyramid.length < 2 && channel_live_status !== undefined && toggle_emote_reaction){
                 const increase_emote_count = (emoteName) => {
                     const messageCount = current_spammed_messages[emoteName];
