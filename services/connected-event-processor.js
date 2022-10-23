@@ -1,4 +1,5 @@
 const {axios_instance} = require('../utils/auth-axios');
+const redis = require('../utils/redis');
 
 module.exports = async (address, port, client) => {
     if(reconnectingToTwitch){
@@ -9,6 +10,7 @@ module.exports = async (address, port, client) => {
 
     sippingInterval = setInterval(async () => {
         if(process.env.APP_ENV != 'production') return;
+        enableSipping = await redis.get('enable_sipping_toggle') === 'true';
         if(!enableSipping) return;
         
         const currentDate = new Date();

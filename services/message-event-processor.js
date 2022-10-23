@@ -2,6 +2,7 @@ const {returnError, returnMessage, postChatMessage} = require('../functions/post
 const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/message-schedule-function');
 
 const emoteParser = require('../utils/tmi-emote-parse');
+const redis = require('../utils/redis');
 
 const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
@@ -19,7 +20,7 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
 }
  
 module.exports = async (channel, userstate, message, self, client) => {
-    if(process.env.APP_ENV != 'production') return;
+    //if(process.env.APP_ENV != 'production') return;
 
     switch(channel.toLowerCase().replace("#", "")){
         case process.env.TWITCH_USERNAME:
@@ -98,17 +99,20 @@ module.exports = async (channel, userstate, message, self, client) => {
                     break;
 
                 case 'message/enable-hydrate':
+                    await redis.set('enable_sipping_toggle', (true).toString());
                     enableSipping = true;
                     returnMessage(`Successfully enables hydrate reminder`, client);
                     break;
                 
                 case 'message/disable-hydrate':
+                    await redis.set('enable_sipping_toggle', (false).toString());
                     enableSipping = false;
                     returnMessage(`Successfully disables hydrate reminder`, client);
                     break;
 
                 case 'emote-reaction/toggle':
                     toggle_emote_reaction = !toggle_emote_reaction;
+                    await redis.set('emote_reaction_toggle', (toggle_emote_reaction).toString());
                     returnMessage(`Successfully ${toggle_emote_reaction ? "enables" : "disables"} emote reaction function`, client);
                     break;
 
@@ -190,11 +194,12 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             //#region reaction when others mass react
             const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
+            toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
             if(chat_has_emotes && pyramid.length < 2 && channel_live_status !== undefined && toggle_emote_reaction){
                 const increase_emote_count = (emoteName) => {
                     const messageCount = current_spammed_messages[emoteName];
                     current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
-                    const time_remaining = channel_live_status ? Math.floor(emote_cooldown/2) : emote_cooldown * 10;
+                    const time_remaining = channel_live_status ? Math.floor(3*emote_cooldown/4) : emote_cooldown * 10;
                     if(!emote_reset_count_timeout[emoteName]){
                         const reset_count_interval = setInterval(() => {
                             emote_reset_count_timeout[emoteName].time_remaining--;
@@ -236,7 +241,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                     });
                 }
                 const exec_cooldown_if_emote_count_enough = (emote, timeoutBeforePostingMessage, updateTimeoutBeforePostingMessage, client) => { 
-                    const messagesBeforeReaction = channel_live_status && channel_viewer_count >= 3500 ? 6 : 4; 
+                    const messagesBeforeReaction = channel_live_status ? channel_viewer_count >= 3500 ? 5 : 4 : 3; 
                     if(current_spammed_messages[emote.name] >= messagesBeforeReaction){
                         currently_on_cooldown_emotes[emote.name] = true;
                         clearInterval(emote_reset_count_timeout[emote.name].interval);

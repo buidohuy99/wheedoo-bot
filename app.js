@@ -6,6 +6,8 @@ const logger = require('morgan');
 
 require('dotenv').config();
 
+const redis = require("./utils/redis");
+
 const app = express();
 
 app.use(logger('dev'));
@@ -43,6 +45,19 @@ global.toggle_emote_reaction = true;
 global.pyramid = [];
 global.current_pyramid_maker = undefined;
 //#endregion
+
+//Init redis global vars
+(async() => {
+  await redis.connect();
+
+  const enable_sipping = await redis.get('enable_sipping_toggle');
+  enableSipping = enable_sipping === undefined || enable_sipping === null ? true : enable_sipping;
+  if(enable_sipping !== enableSipping) await redis.set('enable_sipping_toggle', enableSipping.toString());
+
+  const emoteReaction = await redis.get('emote_reaction_toggle');
+  toggle_emote_reaction = emoteReaction === undefined || emoteReaction === null ? true : emoteReaction;
+  if(emoteReaction !== toggle_emote_reaction) await redis.set('emote_reaction_toggle', toggle_emote_reaction.toString());
+})();
 
 //Initialize tmi.js and connect
 const twitch_chat_client = require("./utils/tmi-connector");
