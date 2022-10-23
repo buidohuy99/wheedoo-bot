@@ -258,7 +258,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                                 comb: emoteComb,
                                 timeout: timeout
                             });
-                            timeout += 1000;
+                            timeout += 1300;
                             emote_comb = emote_combs_itr.next();
                         }
                         updateTimeoutBeforePostingMessage(timeout);
