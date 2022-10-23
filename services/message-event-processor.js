@@ -141,11 +141,9 @@ module.exports = async (channel, userstate, message, self, client) => {
                             pyramid = [];
                             current_pyramid_maker = undefined;
                         }
-                        console.log(pyramid);
                         return;
                     }
                 }
-                console.log(pyramid);
                 //Check if the current state pyramid is a proper pyramid
                 if(pyramid.length % 2 === 0 || pyramid.length < 3) return;
                 const mid = Math.floor(pyramid.length / 2);
@@ -232,10 +230,13 @@ module.exports = async (channel, userstate, message, self, client) => {
                         if(emote.compRefs && emote.compRefs[`${item.start}-${item.end}`])
                         {
                             const allEmotesArray = [mainEmote, ...emote.compRefs[`${item.start}-${item.end}`]];
+                            console.log(allEmotesArray);
                             allEmotesArray.sort((a,b) => {return a.end - b.end;});
                             const resultingComb = allEmotesArray.map((item) => item.name).join(" ");
+                            console.log("Resulting combination:" + resultingComb);
                             emote_combinations[emote.name].add(resultingComb); 
                         }else{
+                            console.log("Resulting emote:" + emote.name);
                             emote_combinations[emote.name].add(emote.name);
                         }
                     });
@@ -273,7 +274,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                 const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 25 : 30;
                 const emotesToIncreaseCount = emoteParser.extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
                 //Order emote by order of appearance in message
-                emotesToIncreaseCount.sort((emote1, emote2) => emote1.occurrences[0].end - emote2.occurrences[0].end);
+                emotesToIncreaseCount.sort((emote1, emote2) => {return emote1.occurrences[0].end - emote2.occurrences[0].end});
                 let timeoutBeforePostingMessage = 500;
                 emotesToIncreaseCount.forEach((emote) => {
                     if(currently_on_cooldown_emotes[emote.name]){
