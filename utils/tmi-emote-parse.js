@@ -187,20 +187,23 @@ module.exports.extractEmoteGroups = (message, userstate, channel) => {
 
             if(foundEmote){
                 const emoteIdx = allEmotesWithCompEmotesRefs.findIndex((fe) => fe.name === foundEmote.name);
-                if(!foundEmote.compRefs){
+                if(!allEmotesWithCompEmotesRefs[emoteIdx].compRefs){
                     allEmotesWithCompEmotesRefs[emoteIdx].compRefs = {};
+                }
+                if(!allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`]){
                     allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`] = [{
                         name: emote.name,
                         start: occ.start,
                         end: occ.end
                     }];
                 }else{
-                    allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`] = 
-                    [...allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`], {
-                        name: emote.name,
-                        start: occ.start,
-                        end: occ.end
-                    }];
+                    allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentEmoteOccurrence.start}-${currentEmoteOccurrence.end}`].push(
+                        {
+                            name: emote.name,
+                            start: occ.start,
+                            end: occ.end
+                        }
+                    );
                 }
             }
         });
