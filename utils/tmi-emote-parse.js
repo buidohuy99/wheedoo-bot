@@ -107,7 +107,11 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
         }
     })
 
-    return gotEmotes;
+    //Order emotes that occur first to the start of the array
+    const sortedEmotes = Object.entries(gotEmotes).sort((emote1, emote2) => emote1[1].occurrences[0].start - emote2[1].occurrences[0].start);
+    const resultingEmotes = Object.fromEntries(sortedEmotes);
+
+    return resultingEmotes;
 }
 
 const getAllComplementaryEmotes = (channel) => {
@@ -154,36 +158,179 @@ module.exports.extractEmoteGroups = (message, userstate, channel) => {
         const returnedEmote = {...emote};
         const compPos = compEmotes.find((ce) => ce.name == emote.name).compPos;
         const standaloneInstances = emote.occurrences.filter((occ) => {
-            if(!compPos || compPos.toLowerCase().trim() === "right"){
-                return !emoteList.find((fe) => fe.occurrences.find(t => t.end + 2 === occ.start));
+            if(!compPos){
+                return !emoteList.find((fe) => fe.occurrences.find(t => t.end + 2 === occ.start)) 
+                && !emoteList.find((fe) => fe.occurrences.find(t => t.start - 2 === occ.end));
+            }else if(compPos.toLowerCase().trim() === "right"){
+                return !emoteList.find((fe) => {
+                    const isCompEmote = compEmotes.find((ce) => ce.name == fe.name);
+                    return fe.occurrences.some(t => t.end + 2 === occ.start)  
+                    && (!isCompEmote || isCompEmote.compPos === "right");
+                });
             }else{
-                return !emoteList.find((fe) => fe.occurrences.find(t => t.start - 2 === occ.end));
+                return !emoteList.find((fe) => {
+                    const isCompEmote = compEmotes.find((ce) => ce.name == fe.name);
+                    return fe.occurrences.some(t => t.start - 2 === occ.end)  
+                    && (!isCompEmote || isCompEmote.compPos === "left");
+                });
             }
         });
+        
         returnedEmote.occurrences = standaloneInstances;
         return returnedEmote;
     });
 
+    //All standalone emotes with comp emotes ref as attrib if have
     const allEmotesWithCompEmotesRefs = [...normalEmotesInMessage, ...(standaloneCompEmotes.filter(e => e.occurrences.length > 0))];
-    compEmotesInMessage.forEach((emote) => {
+
+    //For comp emotes that could be on both sides
+    const flexibleCompEmotes = compEmotesInMessage.map((emote) => {
+        const returnedEmote = {...emote};
         const compPos = compEmotes.find((ce) => ce.name == emote.name).compPos;
+        const nearEmotesInstances = emote.occurrences.filter((occ) => {
+            if(!compPos){
+                return emoteList.find((fe) => fe.occurrences.find(t => t.end + 2 === occ.start)) || emoteList.find((fe) => fe.occurrences.find(t => t.start - 2 === occ.end));
+            }else{
+                return false;
+            }
+        });
+        returnedEmote.occurrences = nearEmotesInstances;
+        return returnedEmote;
+    }).filter(e => e.occurrences.length > 0);
+
+    const leftAndRightCompEmotes = compEmotesInMessage.map((emote) => {
+        const returnedEmote = {...emote};
+        const compPos = compEmotes.find((ce) => ce.name == emote.name).compPos;
+        const nearEmotesInstances = emote.occurrences.filter((occ) => {
+            if(!compPos){
+                return false;
+            }else if(compPos.toLowerCase().trim() === "right"){
+                return emoteList.find((fe) => {
+                    const isCompEmote = compEmotes.find((ce) => ce.name == fe.name);
+                    return fe.occurrences.some(t => t.end + 2 === occ.start)  
+                    && (!isCompEmote || isCompEmote.compPos === "right");
+                });
+            }else{
+                return emoteList.find((fe) => {
+                    const isCompEmote = compEmotes.find((ce) => ce.name == fe.name);
+                    return fe.occurrences.some(t => t.start - 2 === occ.end)  
+                    && (!isCompEmote || isCompEmote.compPos === "left");
+                });
+            }
+        });
+        returnedEmote.occurrences = nearEmotesInstances;
+        return returnedEmote;
+    }).filter(e => e.occurrences.length > 0);
+
+    flexibleCompEmotes.forEach(emote => {
+        const occurrences = emote.occurrences;
+        occurrences.forEach((occ) => {
+            let leftEmote;
+            let leftStandAloneEmote;
+            let currentLeftOccurrence = occ;
+            do{
+                leftEmote = emoteList.find((fe) => fe.occurrences.find(t => t.end + 2 === currentLeftOccurrence.start));
+                leftStandAloneEmote = allEmotesWithCompEmotesRefs.find(e => e.occurrences.find(t => t.end + 2 === currentLeftOccurrence.start));
+                if(leftEmote){
+                    currentLeftOccurrence = leftEmote.occurrences.find(t => t.end + 2 === currentLeftOccurrence.start);
+                }
+            }while(leftEmote && !leftStandAloneEmote);
+
+            let rightEmote;
+            let rightStandAloneEmote;
+            let currentRightOccurrence = occ;
+            //Find a standalone to connect to on the left of the emote
+            if(leftStandAloneEmote){
+                const emoteIdx = allEmotesWithCompEmotesRefs.findIndex((fe) => fe.name === leftStandAloneEmote.name);
+                if(!allEmotesWithCompEmotesRefs[emoteIdx].compRefs){
+                    allEmotesWithCompEmotesRefs[emoteIdx].compRefs = {};
+                }
+                if(!allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentLeftOccurrence.start}-${currentLeftOccurrence.end}`]){
+                    allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentLeftOccurrence.start}-${currentLeftOccurrence.end}`] = [{
+                        name: emote.name,
+                        start: occ.start,
+                        end: occ.end
+                    }];
+                }else{
+                    allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentLeftOccurrence.start}-${currentLeftOccurrence.end}`].push({
+                        name: emote.name,
+                        start: occ.start,
+                        end: occ.end
+                    });
+                }
+            }else{ // Find right standalone emote if can't find a standalone on the left
+                do{
+                    rightEmote = emoteList.find((fe) => fe.occurrences.find(t => t.start - 2 === currentRightOccurrence.end));
+                    rightStandAloneEmote = allEmotesWithCompEmotesRefs.find(e => e.occurrences.find(t => t.start - 2 === currentRightOccurrence.end));
+                    if(rightEmote){
+                        currentRightOccurrence = rightEmote.occurrences.find(t => t.start - 2 === currentRightOccurrence.end);
+                    }
+                }while(rightEmote && !rightStandAloneEmote);
+
+                if(rightStandAloneEmote){
+                    const emoteIdx = allEmotesWithCompEmotesRefs.findIndex((fe) => fe.name === rightStandAloneEmote.name);
+                    if(!allEmotesWithCompEmotesRefs[emoteIdx].compRefs){
+                        allEmotesWithCompEmotesRefs[emoteIdx].compRefs = {};
+                    }
+                    if(!allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentRightOccurrence.start}-${currentRightOccurrence.end}`]){
+                        allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentRightOccurrence.start}-${currentRightOccurrence.end}`] = [{
+                            name: emote.name,
+                            start: occ.start,
+                            end: occ.end
+                        }];
+                    }else{
+                        allEmotesWithCompEmotesRefs[emoteIdx].compRefs[`${currentRightOccurrence.start}-${currentRightOccurrence.end}`].push({
+                            name: emote.name,
+                            start: occ.start,
+                            end: occ.end
+                        });
+                    }
+                }
+            }
+            
+            if(!leftStandAloneEmote && !rightStandAloneEmote){ //If can't find an emote to rely on, make itself a standalone
+                const currentEmoteIdx = allEmotesWithCompEmotesRefs.findIndex((fe) => fe.name === emote.name);
+                if(currentEmoteIdx === -1){
+                    const newStandaloneEmote = {...emote};
+                    newStandaloneEmote.occurrences = [occ];
+                    allEmotesWithCompEmotesRefs.push(newStandaloneEmote)
+                }else{
+                    allEmotesWithCompEmotesRefs[currentEmoteIdx].occurrences.push(occ);
+                }
+            }
+        });
+    });
+    //For comp emotes with that can only be on the left or right
+    leftAndRightCompEmotes.forEach((emote) => {
+        const compPos = compEmotes.find((ce) => ce.name == emote.name).compPos;
+        if(!compPos) return;
+
         emote.occurrences.forEach((occ) => {
             let foundEmote;
             let seekPredicate;
             let currentEmoteOccurrence = occ;
-            if(!compPos || compPos.toLowerCase().trim() === "right"){
+            let currentEmoteCompPos = compPos;
+
+            if(compPos.toLowerCase().trim() === "right"){
                 seekPredicate = (t, currentEmoteOccurrence) => t.end + 2 === currentEmoteOccurrence.start;
                 
             }else{
                 seekPredicate = (t, currentEmoteOccurrence) => t.start - 2 === currentEmoteOccurrence.end;
             }
             do{
+                currentEmoteCompPos = undefined;
                 foundEmote = emoteList.find((fe) => {
                     const emoteOcc = fe.occurrences.find((t) => seekPredicate(t, currentEmoteOccurrence));
-                    if(emoteOcc) currentEmoteOccurrence = emoteOcc; 
+                    if(emoteOcc) currentEmoteOccurrence = emoteOcc;
+                    const isCompEmote = compEmotes.find((ce) => ce.name === fe.name);
+                    if(isCompEmote) {
+                        currentEmoteCompPos = isCompEmote.compPos ? isCompEmote.compPos.toLowerCase().trim() : "flexible";
+                    }
                     return emoteOcc;
                 });
-            }while(foundEmote && !allEmotesWithCompEmotesRefs.find(fe => fe.name === foundEmote.name));
+            }while(foundEmote
+                && !allEmotesWithCompEmotesRefs.find(fe => fe.name === foundEmote.name 
+                && (!currentEmoteCompPos || fe.occurrences.some(item => item.end === currentEmoteOccurrence.end && item.start === currentEmoteOccurrence.start))));
 
             if(foundEmote){
                 const emoteIdx = allEmotesWithCompEmotesRefs.findIndex((fe) => fe.name === foundEmote.name);
@@ -209,6 +356,138 @@ module.exports.extractEmoteGroups = (message, userstate, channel) => {
         });
     });
 
+    //Connect emotes that are next to each other through comp emotes found in comprefs
+    allEmotesWithCompEmotesRefs.forEach(emote => {
+        const currentEmoteIdx = allEmotesWithCompEmotesRefs.indexOf(emote);
+        emote.occurrences.forEach((occ, currentOccIdx) => {
+            //Connected from searching up the comp ref array of the current occurrence
+            if(!emote.compRefs) return;
+            const compRef = emote.compRefs[`${occ.start}-${occ.end}`];
+            if(!compRef) return;
+            compRef.forEach((ref) => {
+                const findCompEmotes = compEmotes.find(e => e.name === ref.name);
+                if(!findCompEmotes || findCompEmotes.compPos !== undefined) return;
+                //Other emotes
+                allEmotesWithCompEmotesRefs.forEach((e) => {
+                    //To other emote's occurrences or comp refs
+                    const connectedToOccurence = e.occurrences.findIndex(ite => ite == e.occurrences.filter(oc => oc.start !== occ.start && oc.end !== occ.end).find(otherocc => ref.end === otherocc.start - 2 || ref.start === otherocc.end + 2));
+                    const connectedToCompRefs = e.occurrences.findIndex(ite => ite == e.occurrences.filter(oc => oc.start !== occ.start && oc.end !== occ.end).find(otherOcc =>
+                        e.compRefs && e.compRefs[`${otherOcc.start}-${otherOcc.end}`] && 
+                        e.compRefs[`${otherOcc.start}-${otherOcc.end}`].find((compRef) => ref.end === compRef.start - 2 || ref.start === compRef.end + 2)
+                    ));  
+                    const emoteIdx = allEmotesWithCompEmotesRefs.indexOf(e); 
+
+                    const isCurrentNormalEmote = normalEmotesInMessage.find(e => e.name === allEmotesWithCompEmotesRefs[currentEmoteIdx].name);
+                    const isOtherNormalEmote = normalEmotesInMessage.find(e => e.name === allEmotesWithCompEmotesRefs[emoteIdx].name);
+                    const newPlacementIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? currentEmoteIdx : emoteIdx;
+                    const oldPlacementIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? emoteIdx : currentEmoteIdx;
+                        
+                    let occurrenceToSpliceIdx;
+                    let occurrenceToAddCompRefs;
+                    if(connectedToOccurence !== -1 || connectedToCompRefs !== -1){
+                        if(connectedToOccurence !== -1){
+                            occurrenceToSpliceIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? connectedToOccurence : currentOccIdx;
+                            occurrenceToAddCompRefs = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? occ : e.occurrences[connectedToOccurence];
+                        }else{
+                            occurrenceToSpliceIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? connectedToCompRefs : currentOccIdx;
+                            occurrenceToAddCompRefs = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? occ : e.occurrences[connectedToCompRefs];
+                        }
+
+                        const mainItem = allEmotesWithCompEmotesRefs[oldPlacementIdx].occurrences.splice(occurrenceToSpliceIdx, 1)[0];
+                        if(!allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs){
+                            allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs = {};
+                        }
+                        if(!allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`]){
+                            allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`] = [];
+                        }
+                        
+                        allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`].push({
+                            name: allEmotesWithCompEmotesRefs[oldPlacementIdx].name,
+                            ...mainItem
+                        });
+                        if(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs){
+                            const compRefs = allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs[`${mainItem.start}-${mainItem.end}`];
+                            if(compRefs){
+                                delete allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs[`${mainItem.start}-${mainItem.end}`];
+                                allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`] = allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`].concat(compRefs);
+                            }
+                        }
+                    }
+
+                    if(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs && Object.keys(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs).length === 0 && Object.getPrototypeOf(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs) === Object.prototype){
+                        delete allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs;
+                    }
+                    if(allEmotesWithCompEmotesRefs[oldPlacementIdx].occurrences.length <= 0)
+                    {
+                        allEmotesWithCompEmotesRefs.splice(oldPlacementIdx, 1);
+                    }
+                });
+            });
+        });
+    });
+
+    allEmotesWithCompEmotesRefs.forEach(emote => {
+        const currentEmoteIdx = allEmotesWithCompEmotesRefs.indexOf(emote);
+        emote.occurrences.forEach((occ, currentOccIdx) => {
+            allEmotesWithCompEmotesRefs.forEach((e) => {
+                //To other emote's occurrences or comp refs
+                const connectedToCompRefs = e.occurrences.findIndex(ite => ite == e.occurrences.filter(oc => oc.start !== occ.start && oc.end !== occ.end).find(otherOcc =>
+                    e.compRefs && e.compRefs[`${otherOcc.start}-${otherOcc.end}`] && 
+                    e.compRefs[`${otherOcc.start}-${otherOcc.end}`].find((compRef) => occ.end === compRef.start - 2 || occ.start === compRef.end + 2)
+                )); 
+                if(connectedToCompRefs !== -1){
+                    const compRefs = e.compRefs[`${e.occurrences[connectedToCompRefs].start}-${e.occurrences[connectedToCompRefs].end}`];
+                    const compRefConnected = compEmotes.find(ce => compRefs.find(ref => ref.name === ce.name));  
+                    if(!compRefConnected || compRefConnected.compPos !== undefined) return;
+                }else{
+                    return;
+                }
+                const emoteIdx = allEmotesWithCompEmotesRefs.indexOf(e); 
+
+                const isCurrentNormalEmote = normalEmotesInMessage.find(e => e.name === allEmotesWithCompEmotesRefs[currentEmoteIdx].name);
+                const isOtherNormalEmote = normalEmotesInMessage.find(e => e.name === allEmotesWithCompEmotesRefs[emoteIdx].name);
+                const newPlacementIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? currentEmoteIdx : emoteIdx;
+                const oldPlacementIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? emoteIdx : currentEmoteIdx;
+                    
+                let occurrenceToSpliceIdx;
+                let occurrenceToAddCompRefs;
+                if(connectedToCompRefs !== -1){
+                    occurrenceToSpliceIdx = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? connectedToCompRefs : currentOccIdx;
+                    occurrenceToAddCompRefs = isCurrentNormalEmote || (!isCurrentNormalEmote && !isOtherNormalEmote) ? occ : e.occurrences[connectedToCompRefs];
+
+                    const mainItem = allEmotesWithCompEmotesRefs[oldPlacementIdx].occurrences.splice(occurrenceToSpliceIdx, 1)[0];
+                    if(!allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs){
+                        allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs = {};
+                    }
+                    if(!allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`]){
+                        allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`] = [];
+                    }
+                    
+                    allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`].push({
+                        name: allEmotesWithCompEmotesRefs[oldPlacementIdx].name,
+                        ...mainItem
+                    });
+                    if(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs){
+                        const compRefs = allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs[`${mainItem.start}-${mainItem.end}`];
+                        if(compRefs){
+                            delete allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs[`${mainItem.start}-${mainItem.end}`];
+                            allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`] = allEmotesWithCompEmotesRefs[newPlacementIdx].compRefs[`${occurrenceToAddCompRefs.start}-${occurrenceToAddCompRefs.end}`].concat(compRefs);
+                        }
+                    }
+                }
+
+                if(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs && Object.keys(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs).length === 0 && Object.getPrototypeOf(allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs) === Object.prototype){
+                    delete allEmotesWithCompEmotesRefs[oldPlacementIdx].compRefs;
+                }
+                if(allEmotesWithCompEmotesRefs[oldPlacementIdx].occurrences.length <= 0)
+                {
+                    allEmotesWithCompEmotesRefs.splice(oldPlacementIdx, 1);
+                }
+            });
+        });
+    });
+
+    console.log(allEmotesWithCompEmotesRefs);
 
     return allEmotesWithCompEmotesRefs;
 }

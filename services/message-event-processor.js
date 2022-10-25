@@ -20,11 +20,11 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
 }
  
 module.exports = async (channel, userstate, message, self, client) => {
-    //if(process.env.APP_ENV != 'production') return;
-    toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
+    toggle_emote_reaction = await redis.get('emote_reaction_toggle');
 
     switch(channel.toLowerCase().replace("#", "")){
         case process.env.TWITCH_USERNAME:
+            if(process.env.APP_ENV != 'production') return;
             //#region messages from wheedoo channel
             if(userstate.username.toLowerCase() !== process.env.TWITCH_USERNAME) return;
             const prefix = message.substring(0, Math.min(1, message.length));
@@ -182,14 +182,18 @@ module.exports = async (channel, userstate, message, self, client) => {
                     pyramid = [];
                     current_pyramid_maker = occurrences.length === 1 ? userstate.username.toLowerCase() : undefined;
                 }
+                console.log(current_pyramid_maker);
+                console.log(userstate.username.toLowerCase());
                 if(current_pyramid_maker && userstate.username.toLowerCase() === current_pyramid_maker)
                 {   
                     insertNewPyramidLine(occurrences, emote[0]);
                 }
             }else{
+                console.log("Pyramid interrupted by another message");
                 pyramid = [];
                 current_pyramid_maker = undefined;
             }
+            console.log(pyramid);
             //#endregion
             //#region reaction when others mass react
             const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);

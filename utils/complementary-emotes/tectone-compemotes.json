@@ -8,11 +8,17 @@
         "compPos": "right"
     },
     {
-        "name": "CLM",
-        "compPos": "left"
+        "name": "CLM"
     },
     {
-        "name": "pepeGun",
+        "name": "pepeGun"
+    },
+    {
+        "name": "lickL",
+        "compPos": "right"
+    },
+    {
+        "name": "lickR",
         "compPos": "left"
     }
 ]

@@ -4,42 +4,52 @@
         "compPos": "left"
     },
     {
-        "name": "SpeedR"
+        "name": "SpeedR",
+        "compPos": "right"
     },
     {
-        "name": "SALAMI"
+        "name": "SALAMI",
+        "compPos": "right"
     },
     {
-        "name": "BobaTime"
+        "name": "BobaTime",
+        "compPos": "right"
     },
     {
-        "name": "Clap"
+        "name": "Clap",
+        "compPos": "right"
     },
     {
         "name": "DanceTime1",
         "compPos": "left"
     },
     {
-        "name": "DanceTime2"
+        "name": "DanceTime2",
+        "compPos": "right"
     },
     {
         "name": "Thinking1",
         "compPos": "left"
     },
     {
-        "name": "Thinking2"
+        "name": "Thinking2",
+        "compPos": "right"
     },
     {
-        "name": "SmokeTime"
+        "name": "SmokeTime",
+        "compPos": "right"
     },
     {
-        "name": "Spray"
+        "name": "Spray",
+        "compPos": "right"
     },
     {
-        "name": "RainTime"
+        "name": "RainTime",
+        "compPos": "right"
     },
     {
-        "name": "DrumTime"
+        "name": "DrumTime",
+        "compPos": "right"
     },
     {
         "name": "HyperClap",
@@ -54,12 +64,10 @@
         "compPos": "right"
     },
     {
-        "name": "Tssk",
-        "compPos": "right"
+        "name": "Tssk"
     },
     {
-        "name": "EDM",
-        "compPos": "right"
+        "name": "EDM"
     },
     {
         "name": "LeftHand",
@@ -68,14 +76,6 @@
     {
         "name": "RightHand",
         "compPos": "right"
-    },
-    {
-        "name": "SALAMI",
-        "compPos": "right"
-    },
-    {
-        "name": "Thinking1",
-        "compPos": "left"
     },
     {
         "name": "BOP",
@@ -174,7 +174,6 @@
         "compPos": "right"
     },
     {
-        "name": "pepeGun",
-        "compPos": "right"
+        "name": "pepeGun"
     }
 ]
