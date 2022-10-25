@@ -20,7 +20,7 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
 }
  
 module.exports = async (channel, userstate, message, self, client) => {
-    toggle_emote_reaction = await redis.get('emote_reaction_toggle');
+    toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
 
     switch(channel.toLowerCase().replace("#", "")){
         case process.env.TWITCH_USERNAME:
