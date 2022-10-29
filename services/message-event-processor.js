@@ -163,7 +163,9 @@ module.exports = async (channel, userstate, message, self, client) => {
                 }
                 if(isPyramidComplete){
                     if(pyramid_width >= 3){
-                        postChatMessage(`/me POGGIES UWAAA~, nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt! HYPER`, client);
+                        setTimeout(() => {
+                            postChatMessage(`/me POGGIES UWAAA~, nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt! HYPER`, client);
+                        }, 1000); //Delay 1 sec before congrats message
                     }
                     const lastElement = pyramid[near_last_idx + 1];
                     if(lastElement === 1){
