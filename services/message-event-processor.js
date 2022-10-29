@@ -9,14 +9,8 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const emotes = Object.entries(emoteDict);
     if(emotes.length !== 1) return false;
     const emote = emotes[0];
-    //Check if emote only
-    for(let i = 0; i < emote[1].occurrences.length - 1; i++){
-        const current = emote[1].occurrences[i];
-        const next = emote[1].occurrences[i + 1];
-        if(current.end + 2 !== next.start) return false;
-    }
-    if(emote[1].occurrences.length === 1 && (emote[1].occurrences[0].start !== 0 || emote[1].occurrences[0].end !== message.length - 1)) return false;
-    return true;
+    const check = message.replace(new RegExp("[^A-Za-z0-9]", "g"), "").replaceAll(emote[0], "");
+    return check.length <= 0;
 }
  
 module.exports = async (channel, userstate, message, self, client) => {
