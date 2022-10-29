@@ -297,6 +297,10 @@ module.exports = async (channel, userstate, message, self, client) => {
                 });
             }
             //#endregion
+            //#region Evaluate command and provide proper functionalities
+            const botName = `@${process.env.TWITCH_USERNAME}`;
+            
+            //#endregion
             break;
     }
 }

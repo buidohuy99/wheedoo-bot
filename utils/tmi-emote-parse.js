@@ -86,7 +86,7 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
 
     fEmotes.forEach(ele => {
         const code = ele.name; 
-        const splitIntoWords = message.split("\\s+");
+        const splitIntoWords = message.split(new RegExp("\\s+"));
         let startsFrom = 0;
         for(const match of splitIntoWords){
             if(match !== code) continue;
