@@ -125,6 +125,7 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             break;
         case process.env.TWITCH_CHANNEL:
+            messages_this_interval++;
             //#region pyramid evaluator
             const insertNewPyramidLine = (occurrences, emoteName) => {
                 let near_last_idx = pyramid.length - 1;
@@ -200,11 +201,14 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             //#region reaction when others mass react
             const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
-            if(chat_has_emotes && pyramid.length < 2 && channel_live_status !== undefined && toggle_emote_reaction){
+            if(chat_has_emotes && pyramid.length < 2 && messages_per_ten_second !== undefined && toggle_emote_reaction){
+                const emote_cooldown = messages_per_ten_second >= 3 ? 
+                (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 30 : 45) : 90) : 120;
+
                 const increase_emote_count = (emoteName) => {
                     const messageCount = current_spammed_messages[emoteName];
                     current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
-                    const time_remaining = channel_live_status ? Math.floor(3*emote_cooldown/4) : emote_cooldown * 10;
+                    const time_remaining = messages_per_ten_second > 5 ? emote_cooldown*1.2 : emote_cooldown * 1.5; 
                     if(!emote_reset_count_timeout[emoteName]){
                         const reset_count_interval = setInterval(() => {
                             emote_reset_count_timeout[emoteName].time_remaining--;
@@ -249,7 +253,8 @@ module.exports = async (channel, userstate, message, self, client) => {
                     });
                 }
                 const exec_cooldown_if_emote_count_enough = (emote, timeoutBeforePostingMessage, updateTimeoutBeforePostingMessage, client) => { 
-                    const messagesBeforeReaction = channel_live_status ? channel_viewer_count >= 3500 ? 5 : 4 : 3; 
+                    const messagesBeforeReaction = messages_per_ten_second >= 3 ? 
+                    (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 7 : 5) : 4) : 3; 
                     if(current_spammed_messages[emote.name] >= messagesBeforeReaction){
                         currently_on_cooldown_emotes[emote.name] = true;
                         clearInterval(emote_reset_count_timeout[emote.name].interval);
@@ -278,7 +283,6 @@ module.exports = async (channel, userstate, message, self, client) => {
                     }
                 }
 
-                const emote_cooldown = channel_live_status && channel_viewer_count >= 3500 ? 25 : 30;
                 const emotesToIncreaseCount = emoteParser.extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
                 //Order emote by order of appearance in message
                 emotesToIncreaseCount.sort((emote1, emote2) => {return emote1.occurrences[0].end - emote2.occurrences[0].end});
