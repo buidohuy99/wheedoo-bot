@@ -86,18 +86,18 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
 
     fEmotes.forEach(ele => {
         const code = ele.name; 
-        const regex = new RegExp(`(?:^|\\s+)(${code})(?=$|\\s+)`, "gm");
+        const regex = new RegExp(`(?<=^|\\s+)(${code})(?=$|\\s+)`, "gm");
         while(match = regex.exec(message)){
             if(!gotEmotes[code]){
                 let newEmote = ele;
                 newEmote.occurrences = [{
-                    start: match.index !== 0 ? match.index + 1 : 0,
+                    start: match.index,
                     end: match.index + match[0].length - 1
                 }]
                 gotEmotes[code] = newEmote;
             }else{
                 gotEmotes[code].occurrences.push({
-                    start: match.index !== 0 ? match.index + 1 : 0,
+                    start: match.index,
                     end: match.index + match[0].length - 1
                 });
             }
