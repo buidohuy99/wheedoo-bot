@@ -3,6 +3,7 @@ const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/m
 
 const emoteParser = require('../utils/tmi-emote-parse');
 const redis = require('../utils/redis');
+const qna_model = require('../utils/qna-model');
 
 const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
@@ -12,7 +13,11 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const check = message.replace(new RegExp("[^A-Za-z0-9]", "g"), "").replaceAll(emote[0], "");
     return check.length <= 0;
 }
- 
+
+const AskMeAnything = async (question, username) => {
+    console.log(await qna_model.getAnswerToQuestion(question));
+}
+
 module.exports = async (channel, userstate, message, self, client) => {
     toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
     if(process.env.APP_ENV === 'dev') toggle_emote_reaction = true;
@@ -293,7 +298,21 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             //#region Evaluate command and provide proper functionalities
             const botName = `@${process.env.TWITCH_USERNAME}`;
-            
+            if(message.includes(botName)){
+                const rawMessage = message.replaceAll(botName, "").trim();
+                const prefix = rawMessage.substring(0, Math.min(1, message.length));
+                if(prefix !== '!') return;
+
+                const commandSeparatorLocation = rawMessage.indexOf(' ');
+                const command = rawMessage.substring(0, commandSeparatorLocation < 0 ? rawMessage.length : commandSeparatorLocation);
+                const argsString = commandSeparatorLocation < 0 ? '' : rawMessage.substring(commandSeparatorLocation + 1).trim();
+
+                switch(command.replace('!','')){
+                    case 'ama':
+                        await AskMeAnything(question, userstate.username);
+                        break;
+                }
+            }
             //#endregion
             break;
     }

@@ -91,7 +91,7 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
         for(const match of splitIntoWords){
             if(match !== code) continue;
             const foundIdx = message.indexOf(match, startsFrom);
-            startsFrom += match.length;
+            startsFrom = foundIdx + match.length;
             if(!gotEmotes[code]){
                 let newEmote = ele;
                 newEmote.occurrences = [{
@@ -317,10 +317,10 @@ module.exports.extractEmoteGroups = (message, userstate, channel) => {
             let currentEmoteCompPos = compPos;
 
             if(compPos.toLowerCase().trim() === "right"){
-                seekPredicate = (t, currentEmoteOccurrence) => t.end + 2 === currentEmoteOccurrence.start;
+                seekPredicate = (t, currentEmoteOccurrence) => {return t.end + 2 === currentEmoteOccurrence.start};
                 
             }else{
-                seekPredicate = (t, currentEmoteOccurrence) => t.start - 2 === currentEmoteOccurrence.end;
+                seekPredicate = (t, currentEmoteOccurrence) => {return t.start - 2 === currentEmoteOccurrence.end};
             }
             do{
                 currentEmoteCompPos = undefined;

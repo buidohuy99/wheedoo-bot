@@ -1,12 +1,14 @@
 {
   "name": "twitch-chat-bot-tectone",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "cross-env APP_ENV='production' node ./bin/www",
     "debug": "cross-env APP_ENV='dev' nodemon ./bin/www"
   },
   "dependencies": {
+    "@tensorflow-models/qna": "^1.0.1",
+    "@tensorflow/tfjs": "^3.21.0",
     "axios": "^0.27.2",
     "cookie-parser": "~1.4.4",
     "cross-env": "^7.0.3",
@@ -15,7 +17,9 @@
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "jade": "^1.9.2",
+    "keyword-extractor": "^0.0.23",
     "morgan": "~1.9.1",
+    "node-cache": "^5.1.2",
     "redis": "^4.3.1",
     "tmi.js": "^1.8.5"
   }
