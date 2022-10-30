@@ -9,6 +9,7 @@
   "dependencies": {
     "@tensorflow-models/qna": "^1.0.1",
     "@tensorflow/tfjs": "^3.21.0",
+    "@tensorflow/tfjs-node": "^3.21.0",
     "axios": "^0.27.2",
     "cookie-parser": "~1.4.4",
     "cross-env": "^7.0.3",

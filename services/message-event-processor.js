@@ -3,7 +3,6 @@ const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/m
 
 const emoteParser = require('../utils/tmi-emote-parse');
 const redis = require('../utils/redis');
-const qna_model = require('../utils/qna-model');
 
 const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
@@ -15,7 +14,7 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
 }
 
 const AskMeAnything = async (question, username) => {
-    console.log(await qna_model.getAnswerToQuestion(question));
+    
 }
 
 module.exports = async (channel, userstate, message, self, client) => {
@@ -200,100 +199,111 @@ module.exports = async (channel, userstate, message, self, client) => {
             //#endregion
             //#region reaction when others mass react
             const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
-            if(chat_has_emotes && pyramid.length < 2 && messages_per_ten_second !== undefined && toggle_emote_reaction){
-                const emote_cooldown = messages_per_ten_second >= 3 ? 
-                (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 30 : 45) : 90) : 120;
+            if(chat_has_emotes && messages_per_ten_second !== undefined && toggle_emote_reaction){
+                let emotesInMessage = emoteParser.extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
+                //Order emote by order of appearance in message
+                emotesInMessage = emotesInMessage.sort((emote1, emote2) => {return emote1.occurrences[0].end - emote2.occurrences[0].end});
+                
+                if(pyramid.length < 2){
+                    const emote_cooldown = messages_per_ten_second >= 3 ? 
+                    (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 30 : 45) : 90) : 120;
 
-                const increase_emote_count = (emoteName) => {
-                    const messageCount = current_spammed_messages[emoteName];
-                    current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
-                    const time_remaining = messages_per_ten_second > 5 ? emote_cooldown*1.2 : emote_cooldown * 1.5; 
-                    if(!emote_reset_count_timeout[emoteName]){
-                        const reset_count_interval = setInterval(() => {
-                            emote_reset_count_timeout[emoteName].time_remaining--;
-                            if(emote_reset_count_timeout[emoteName].time_remaining === 0){
-                                clearInterval(emote_reset_count_timeout[emoteName].interval);
-                                delete emote_reset_count_timeout[emoteName];
-                                delete current_spammed_messages[emoteName];
-                                delete emote_combinations[emoteName];
-                                return;
-                            }
-                        }, 1000);
-                        emote_reset_count_timeout[emoteName] = {
-                            time_remaining: time_remaining,
-                            interval: reset_count_interval
-                        };
-                    }else{
-                        emote_reset_count_timeout[emoteName].time_remaining += time_remaining - emote_reset_count_timeout[emoteName].time_remaining;
-                    }
-                }
-                const build_emote_combinations = (emote) => {
-                    emote.occurrences.forEach((item) => {
-                        const mainEmote = {
-                            name: emote.name,
-                            start: item.start,
-                            end: item.end
-                        }
-                        if(!emote_combinations[emote.name]){
-                            emote_combinations[emote.name] = new Set();
-                        }
-                        if(emote.compRefs && emote.compRefs[`${item.start}-${item.end}`])
-                        {
-                            const allEmotesArray = [mainEmote, ...emote.compRefs[`${item.start}-${item.end}`]];
-                            console.log(allEmotesArray);
-                            allEmotesArray.sort((a,b) => {return a.end - b.end;});
-                            const resultingComb = allEmotesArray.map((item) => item.name).join(" ");
-                            console.log("Resulting combination:" + resultingComb);
-                            emote_combinations[emote.name].add(resultingComb); 
+                    const increase_emote_count = (emoteName) => {
+                        const messageCount = current_spammed_messages[emoteName];
+                        current_spammed_messages[emoteName] = messageCount > 0 ? (messageCount + 1) : 1;
+                        const time_remaining = messages_per_ten_second > 5 ? emote_cooldown*1.2 : emote_cooldown * 1.5; 
+                        if(!emote_reset_count_timeout[emoteName]){
+                            const reset_count_interval = setInterval(() => {
+                                emote_reset_count_timeout[emoteName].time_remaining--;
+                                if(emote_reset_count_timeout[emoteName].time_remaining === 0){
+                                    clearInterval(emote_reset_count_timeout[emoteName].interval);
+                                    delete emote_reset_count_timeout[emoteName];
+                                    delete current_spammed_messages[emoteName];
+                                    delete emote_combinations[emoteName];
+                                    return;
+                                }
+                            }, 1000);
+                            emote_reset_count_timeout[emoteName] = {
+                                time_remaining: time_remaining,
+                                interval: reset_count_interval
+                            };
                         }else{
-                            console.log("Resulting emote:" + emote.name);
-                            emote_combinations[emote.name].add(emote.name);
+                            emote_reset_count_timeout[emoteName].time_remaining += time_remaining - emote_reset_count_timeout[emoteName].time_remaining;
                         }
+                    }
+                    const build_emote_combinations = (emote) => {
+                        emote.occurrences.forEach((item) => {
+                            const mainEmote = {
+                                name: emote.name,
+                                start: item.start,
+                                end: item.end
+                            }
+                            if(!emote_combinations[emote.name]){
+                                emote_combinations[emote.name] = {};
+                            }
+                            if(emote.compRefs && emote.compRefs[`${item.start}-${item.end}`])
+                            {
+                                const allEmotesArray = [mainEmote, ...emote.compRefs[`${item.start}-${item.end}`]];
+                                console.log(allEmotesArray);
+                                allEmotesArray.sort((a,b) => {return a.end - b.end;});
+                                const resultingComb = allEmotesArray.map((item) => item.name).join(" ");
+                                console.log("Resulting combination:" + resultingComb);
+                                if(emote_combinations[emote.name][resultingComb]){
+                                    emote_combinations[emote.name][resultingComb]++;
+                                }else{
+                                    emote_combinations[emote.name][resultingComb] = 1;
+                                }
+                            }else{
+                                console.log("Resulting emote:" + emote.name);
+                                if(emote_combinations[emote.name][emote.name]){
+                                    emote_combinations[emote.name][emote.name]++;
+                                }else{
+                                    emote_combinations[emote.name][emote.name] = 1;
+                                }
+                            }
+                        });
+                    }
+                    const exec_cooldown_if_emote_count_enough = (emote, client) => { 
+                        const messagesBeforeReaction = messages_per_ten_second >= 3 ? 
+                        (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 7 : 5) : 4) : 3; 
+                        if(current_spammed_messages[emote.name] >= messagesBeforeReaction){
+                            currently_on_cooldown_emotes[emote.name] = true;
+                            clearInterval(emote_reset_count_timeout[emote.name].interval);
+                            delete emote_reset_count_timeout[emote.name];
+                            //Output all possible combinations typed
+                            const result = Object.entries(emote_combinations[emote.name]).sort(([, comb_count1], [, comb_count2]) =>{
+                                return comb_count2 - comb_count1;
+                            });
+                            const mostUsedComb = result[0][0];
+                            setTimeout(() => postChatMessage(mostUsedComb + ' \udb40\udc00', client), 500);
+                            delete emote_combinations[emote.name];
+                            setTimeout(() => {
+                                delete currently_on_cooldown_emotes[emote.name];
+                                delete current_spammed_messages[emote.name];
+                            }, emote_cooldown*1000);
+                        }
+                    }
+                    emotesInMessage.forEach((emote) => {
+                        if(currently_on_cooldown_emotes[emote.name]){
+                            return;
+                        }
+                        increase_emote_count(emote.name);
+                        build_emote_combinations(emote);
+                        exec_cooldown_if_emote_count_enough(emote, client);
+                    });
+                }else{
+                    emotesInMessage.forEach((emote) => {
+                        if(currently_on_cooldown_emotes[emote.name]){
+                            return;
+                        }
+                        if(emote_reset_count_timeout[emote.name]){
+                            clearInterval(emote_reset_count_timeout[emote.name].interval);
+                            delete emote_reset_count_timeout[emote.name];
+                        }
+                        delete current_spammed_messages[emote.name];
+                        delete emote_combinations[emote.name];
                     });
                 }
-                const exec_cooldown_if_emote_count_enough = (emote, timeoutBeforePostingMessage, updateTimeoutBeforePostingMessage, client) => { 
-                    const messagesBeforeReaction = messages_per_ten_second >= 3 ? 
-                    (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 7 : 5) : 4) : 3; 
-                    if(current_spammed_messages[emote.name] >= messagesBeforeReaction){
-                        currently_on_cooldown_emotes[emote.name] = true;
-                        clearInterval(emote_reset_count_timeout[emote.name].interval);
-                        delete emote_reset_count_timeout[emote.name];
-                        //Output all possible combinations typed
-                        let timeout = timeoutBeforePostingMessage;
-                        const emote_combs_itr = emote_combinations[emote.name].values();
-                        let emote_comb = emote_combs_itr.next();
-                        let emoteCombsWithTimeout = [];
-                        while(!emote_comb.done){
-                            const emoteComb = emote_comb.value;
-                            emoteCombsWithTimeout.push({
-                                comb: emoteComb,
-                                timeout: timeout
-                            });
-                            timeout += 1300;
-                            emote_comb = emote_combs_itr.next();
-                        }
-                        updateTimeoutBeforePostingMessage(timeout);
-                        emoteCombsWithTimeout.forEach(item => setTimeout(() => postChatMessage(item.comb + ' \udb40\udc00', client), item.timeout));
-                        delete emote_combinations[emote.name];
-                        setTimeout(() => {
-                            delete currently_on_cooldown_emotes[emote.name];
-                            delete current_spammed_messages[emote.name];
-                        }, emote_cooldown*1000);
-                    }
-                }
-
-                const emotesToIncreaseCount = emoteParser.extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
-                //Order emote by order of appearance in message
-                emotesToIncreaseCount.sort((emote1, emote2) => {return emote1.occurrences[0].end - emote2.occurrences[0].end});
-                let timeoutBeforePostingMessage = 500;
-                emotesToIncreaseCount.forEach((emote) => {
-                    if(currently_on_cooldown_emotes[emote.name]){
-                        return;
-                    }
-                    increase_emote_count(emote.name);
-                    build_emote_combinations(emote);
-                    exec_cooldown_if_emote_count_enough(emote, timeoutBeforePostingMessage, (newTimeout) => { timeoutBeforePostingMessage = newTimeout}, client);
-                });
             }
             //#endregion
             //#region Evaluate command and provide proper functionalities
@@ -309,7 +319,7 @@ module.exports = async (channel, userstate, message, self, client) => {
 
                 switch(command.replace('!','')){
                     case 'ama':
-                        await AskMeAnything(question, userstate.username);
+                        
                         break;
                 }
             }
