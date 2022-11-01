@@ -20,5 +20,9 @@
     {
         "name": "lickR",
         "compPos": "left"
+    },
+    {
+        "name": "eggyLegs",
+        "compPos": "left"
     }
 ]

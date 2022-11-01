@@ -3,7 +3,10 @@ import {clearMessageSchedule, clearAllMessageSchedules} from '../functions/messa
 
 import {getEmotesWithOccurrences, chatMessageContainsEmotes, extractEmoteGroups} from '../utils/tmi-emote-parse.js';
 import redis from '../utils/redis.js';
-import { getAnswerToQuestion } from '../utils/qna-model.js';
+import { getAnswerToQuestion } from '../functions/qna-model.js';
+import {axios_instance} from '../utils/auth-axios.js';
+
+import { stripHtml } from "string-strip-html";
 
 const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     const emoteDict = getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
@@ -14,8 +17,16 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
     return check.length <= 0;
 }
 
-const AskMeAnything = async (question, username) => {
-    getAnswerToQuestion(question);
+const ChatWithMe = async (question, username, client) => {
+    try{
+        const {data: response} = await axios_instance.get(process.env.TWITCH_API_URL + `/helix/users?login=${username}`);
+        const myResponse = await getAnswerToQuestion(question, response.data[0].id);
+        postChatMessage(`@${username} ${stripHtml(myResponse).result} eggySip`, client);
+    }catch{
+        setTimeout(() => {
+            postChatMessage(`@${username} I\'m so sorry I cannot process your message properly. Can you try again? eggyCry`);
+        }, 1000);
+    }
 }
 
 export const message_event_processor = async (channel, userstate, message, self, client) => {
@@ -319,8 +330,8 @@ export const message_event_processor = async (channel, userstate, message, self,
                 const argsString = commandSeparatorLocation < 0 ? '' : rawMessage.substring(commandSeparatorLocation + 1).trim();
 
                 switch(command.replace('!','')){
-                    case 'ama':
-                        AskMeAnything(argsString, userstate.username);
+                    case 'chat':
+                        ChatWithMe(argsString, userstate.username, client);
                         break;
                 }
             }
