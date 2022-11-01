@@ -18,7 +18,7 @@ const AskMeAnything = async (question, username) => {
     getAnswerToQuestion(question);
 }
 
-export default async (channel, userstate, message, self, client) => {
+export const message_event_processor = async (channel, userstate, message, self, client) => {
     toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
     if(process.env.APP_ENV === 'dev') toggle_emote_reaction = true;
 

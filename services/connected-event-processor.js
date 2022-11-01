@@ -1,7 +1,7 @@
 import {axios_instance} from '../utils/auth-axios.js';
 import redis from '../utils/redis.js';
 
-export default async (address, port, client) => {
+export const connected_event_processor = async (address, port, client) => {
     if(reconnectingToTwitch){
         await client.join(process.env.TWITCH_CHANNEL);
         await client.join(process.env.TWITCH_USERNAME);

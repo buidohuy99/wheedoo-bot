@@ -17,6 +17,4 @@ const client = new tmi.Client({
     channels: [`${process.env.TWITCH_CHANNEL}`, `${process.env.TWITCH_USERNAME}`]
 });
 
-client.connect().catch(console.error);
-
 export default client;

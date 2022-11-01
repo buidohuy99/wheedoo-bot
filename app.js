@@ -16,8 +16,8 @@ import "./utils/setupGlobals.js";
 import {clearAllMessageSchedules} from './functions/message-schedule-function.js';
 import redis from "./utils/redis.js";
 import twitch_chat_client from "./utils/tmi-connector.js";
-import connected_event_processor from './services/connected-event-processor.js';
-import message_event_processor from './services/message-event-processor.js';
+import {connected_event_processor} from './services/connected-event-processor.js';
+import {message_event_processor} from './services/message-event-processor.js';
 
 //Init redis global vars
 const enable_sipping = await redis.get('enable_sipping_toggle');
@@ -31,7 +31,7 @@ console.log('++++ Finished Initializing redis');
 
 //Initialize tmi.js and connect
 // We shall pass the parameters which shall be required
-twitch_chat_client.on('connected', (address, port) => connected_event_processor(address, port, twitch_chat_client));
+twitch_chat_client.on('connected', (address, port) =>connected_event_processor(address, port, twitch_chat_client));
 twitch_chat_client.on('chat', (channel, userstate, message, self) => message_event_processor(channel, userstate, message, self, twitch_chat_client));
 twitch_chat_client.on('disconnected', (reason) => {
   console.error(reason);
@@ -53,6 +53,7 @@ twitch_chat_client.on('disconnected', (reason) => {
 twitch_chat_client.on('reconnect', () => {
   reconnectingToTwitch = true;
 });
+twitch_chat_client.connect().catch(console.error);
 console.log('++++ Finished Initializing tmi.js');
 
 import indexRouter from './routes/index.js'
