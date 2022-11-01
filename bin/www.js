@@ -3,9 +3,10 @@
 /**
  * Module dependencies.
  */
-const app = require('../app.js');
-const debug = require('debug')('twitch-chat-bot-tectone:server');
-const http = require('http');
+import app from '../app.js';
+import DEBUG from 'debug';
+const debug = DEBUG('twitch-chat-bot-tectone:server');
+import http from 'http';
 
 /**
  * Get port from environment and store in Express.

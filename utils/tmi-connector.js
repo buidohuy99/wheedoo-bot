@@ -1,4 +1,4 @@
-const tmi = require('tmi.js');
+import tmi from 'tmi.js';
 
 // Setup connection configurations
 // These include the channel, username and password
@@ -19,4 +19,4 @@ const client = new tmi.Client({
 
 client.connect().catch(console.error);
 
-module.exports = client;
+export default client;

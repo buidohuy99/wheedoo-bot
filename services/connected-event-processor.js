@@ -1,7 +1,7 @@
-const {axios_instance} = require('../utils/auth-axios');
-const redis = require('../utils/redis');
+import {axios_instance} from '../utils/auth-axios.js';
+import redis from '../utils/redis.js';
 
-module.exports = async (address, port, client) => {
+export default async (address, port, client) => {
     if(reconnectingToTwitch){
         await client.join(process.env.TWITCH_CHANNEL);
         await client.join(process.env.TWITCH_USERNAME);

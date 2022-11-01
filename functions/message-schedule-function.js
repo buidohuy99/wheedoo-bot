@@ -1,12 +1,11 @@
-module.exports.clearMessageSchedule = (messageName) => {
+export const clearMessageSchedule = (messageName) => {
     clearInterval(message_schedules[messageName]);
     message_schedules[messageName] = undefined;
     message_schedules_info[messageName] = undefined;
     clearInterval(resetMessageInterval);
     reset_message_intervals[messageName] = undefined;
 }
-
-module.exports.clearAllMessageSchedules = () => {
+export const clearAllMessageSchedules = () => {
     Object.entries(message_schedules).forEach(([key, value]) => {
         clearInterval(value);
         message_schedules[key] = undefined;

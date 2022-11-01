@@ -1,11 +1,12 @@
-const {returnError, returnMessage, postChatMessage} = require('../functions/post-message-function');
-const {clearMessageSchedule, clearAllMessageSchedules} = require('../functions/message-schedule-function');
+import {returnError, returnMessage, postChatMessage} from '../functions/post-message-function.js';
+import {clearMessageSchedule, clearAllMessageSchedules} from '../functions/message-schedule-function.js';
 
-const emoteParser = require('../utils/tmi-emote-parse');
-const redis = require('../utils/redis');
+import {getEmotesWithOccurrences, chatMessageContainsEmotes, extractEmoteGroups} from '../utils/tmi-emote-parse.js';
+import redis from '../utils/redis.js';
+import { getAnswerToQuestion } from '../utils/qna-model.js';
 
 const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
-    const emoteDict = emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
+    const emoteDict = getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL);
     const emotes = Object.entries(emoteDict);
     if(emotes.length !== 1) return false;
     const emote = emotes[0];
@@ -14,10 +15,10 @@ const chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType = (message, userstate) => {
 }
 
 const AskMeAnything = async (question, username) => {
-    
+    getAnswerToQuestion(question);
 }
 
-module.exports = async (channel, userstate, message, self, client) => {
+export default async (channel, userstate, message, self, client) => {
     toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
     if(process.env.APP_ENV === 'dev') toggle_emote_reaction = true;
 
@@ -177,7 +178,7 @@ module.exports = async (channel, userstate, message, self, client) => {
                 }
             };
             if(chatMessageIsEmoteOnlyAndHasOnlyOneEmoteType(message, userstate)){
-                const emotes = Object.entries(emoteParser.getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
+                const emotes = Object.entries(getEmotesWithOccurrences(message, userstate, process.env.TWITCH_CHANNEL));
                 const emote = emotes[0];
                 const {occurrences} = emote[1];
                 if(userstate.username.toLowerCase() !== current_pyramid_maker){
@@ -198,9 +199,9 @@ module.exports = async (channel, userstate, message, self, client) => {
             console.log(pyramid);
             //#endregion
             //#region reaction when others mass react
-            const chat_has_emotes = emoteParser.chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
+            const chat_has_emotes = chatMessageContainsEmotes(message, userstate, process.env.TWITCH_CHANNEL);
             if(chat_has_emotes && messages_per_ten_second !== undefined && toggle_emote_reaction){
-                let emotesInMessage = emoteParser.extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
+                let emotesInMessage = extractEmoteGroups(message, userstate, process.env.TWITCH_CHANNEL);
                 //Order emote by order of appearance in message
                 emotesInMessage = emotesInMessage.sort((emote1, emote2) => {return emote1.occurrences[0].end - emote2.occurrences[0].end});
                 
@@ -319,7 +320,7 @@ module.exports = async (channel, userstate, message, self, client) => {
 
                 switch(command.replace('!','')){
                     case 'ama':
-                        
+                        AskMeAnything(argsString, userstate.username);
                         break;
                 }
             }

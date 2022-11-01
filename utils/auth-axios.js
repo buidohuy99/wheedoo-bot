@@ -1,4 +1,4 @@
-const axios = require("axios").default;
+import axios from "axios";
 
 const AuthAxios = axios.create({
     validateStatus : (status) => {
@@ -77,6 +77,6 @@ const default_response_interceptor = AuthAxios.interceptors.response.use(
     }
 );
 
-module.exports.axios_instance = AuthAxios;
+export const axios_instance = AuthAxios;
 
-module.exports.refreshAccessToken = async() => await updateTwitchAccessToken();
+export const refreshAccessToken = async() => await updateTwitchAccessToken();

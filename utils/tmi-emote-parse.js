@@ -1,27 +1,24 @@
 // 🟦 Require the Module
-const emoteParser = require("./emote-parser");
-const {refreshAccessToken} = require("./auth-axios");
-const fs = require("fs");
-const pth = require("path");
-const { all } = require("../routes");
+import {getAllEmotes} from "./emote-parser.js";
+import fs from "fs";
+
+import {setTwitchCredentials, setDebug, events, loadAssets} from './emote-parser.js';
+import {refreshAccessToken} from "./auth-axios.js";
 
 // 🟦 Set debug state and add event handlers (optional)
-emoteParser.setDebug(true);
-emoteParser.events.on("error", async (e) => {
+setDebug(true);
+events.on("error", async (e) => {
     console.error("Error:", e);
     const access_token = await refreshAccessToken();
-    emoteParser.setTwitchCredentials(process.env.TWITCH_CLIENTID, access_token);
+    setTwitchCredentials(process.env.TWITCH_CLIENTID, access_token);
 });
-
 // Get credentials
-(async() => {
-    const access_token = await refreshAccessToken();
-    emoteParser.setTwitchCredentials(process.env.TWITCH_CLIENTID, access_token);
-    // 🟦 Now you can finally load emotes and badges for a specific channel to later parse/use
-    emoteParser.loadAssets(process.env.TWITCH_CHANNEL);
-})();
+const access_token = await refreshAccessToken();
+setTwitchCredentials(process.env.TWITCH_CLIENTID, access_token);
+// 🟦 Now you can finally load emotes and badges for a specific channel to later parse/use
+loadAssets(process.env.TWITCH_CHANNEL);
 
-module.exports = emoteParser;
+console.log('++++ Finished Initializing emote-parser');
 
 function compareEnd(a, b) {
     if (a.end < b.end) {
@@ -33,7 +30,7 @@ function compareEnd(a, b) {
     return 0;
 }
 
-module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
+export const getEmotesWithOccurrences = (message, tags, channel) => {
     let emotes = [];
     const gotEmotes = {};
     if (tags.emotes != null) {
@@ -73,7 +70,7 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
         });
     }
 
-    let fEmotes = emoteParser.getAllEmotes(channel);
+    let fEmotes = getAllEmotes(channel);
 
     //Remove duplicates
     fEmotes = fEmotes.filter((value, idx) => {
@@ -121,15 +118,15 @@ module.exports.getEmotesWithOccurrences = (message, tags, channel) => {
 
 const getAllComplementaryEmotes = (channel) => {
     let gotEmotes = [];
-    if(fs.existsSync(pth.join(__dirname, `complementary-emotes/global-compemotes.json`))){
+    if(fs.existsSync(new URL(`complementary-emotes/global-compemotes.json`, import.meta.url))){
         //Get global complementary emotes
-        const data = fs.readFileSync(pth.join(__dirname, `complementary-emotes/global-compemotes.json`));
+        const data = fs.readFileSync(new URL(`complementary-emotes/global-compemotes.json`, import.meta.url));
         const emotes = JSON.parse(data.toString());
         gotEmotes = gotEmotes.concat(emotes);
     }
 
-    if(fs.existsSync(pth.join(__dirname,`complementary-emotes/${channel}-compemotes.json`))){ 
-        const data = fs.readFileSync(pth.join(__dirname, `complementary-emotes/${channel}-compemotes.json`));
+    if(fs.existsSync(new URL(`complementary-emotes/${channel}-compemotes.json`, import.meta.url))){ 
+        const data = fs.readFileSync(new URL(`complementary-emotes/${channel}-compemotes.json`, import.meta.url));
         const femotes = JSON.parse(data.toString());
         femotes.forEach((item) => {
             const alreadyIn = gotEmotes.findIndex(e => e.name === item.name);
@@ -146,14 +143,14 @@ const getAllComplementaryEmotes = (channel) => {
 
 const complementaryEmotes = getAllComplementaryEmotes(process.env.TWITCH_CHANNEL);
 
-module.exports.chatMessageContainsEmotes = (message, userstate, channel) => {
-    const emoteDict = module.exports.getEmotesWithOccurrences(message, userstate, channel);
+export const chatMessageContainsEmotes = (message, userstate, channel) => {
+    const emoteDict = getEmotesWithOccurrences(message, userstate, channel);
     const emoteList = Object.entries(emoteDict).map((value) => value[1]);
     return emoteList.length > 0;
 }
 
-module.exports.extractEmoteGroups = (message, userstate, channel) => {
-    const emoteDict = module.exports.getEmotesWithOccurrences(message, userstate, channel);
+export const extractEmoteGroups = (message, userstate, channel) => {
+    const emoteDict = getEmotesWithOccurrences(message, userstate, channel);
     const emoteList = Object.entries(emoteDict).map((value) => value[1]);
 
     const compEmotes = complementaryEmotes;
