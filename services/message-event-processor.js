@@ -321,8 +321,10 @@ export const message_event_processor = async (channel, userstate, message, self,
             //#region Evaluate command and provide proper functionalities
             const botName = `@${process.env.TWITCH_USERNAME}`;
             if(message.includes(botName)){
-                const rawMessage = message.replaceAll(botName, "").trim();
-                const prefix = rawMessage.substring(0, Math.min(1, message.length));
+                let rawMessage = message.replaceAll(botName, "").trim();
+                const firstIdxOfPrefix = rawMessage.indexOf('!');
+                rawMessage = rawMessage.substring(firstIdxOfPrefix);
+                const prefix = rawMessage.substring(0, Math.min(1, rawMessage.length));
                 if(prefix !== '!') return;
 
                 const commandSeparatorLocation = rawMessage.indexOf(' ');
