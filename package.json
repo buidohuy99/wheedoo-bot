@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "cross-env APP_ENV='production' node start ./bin/www.js",
+    "start": "cross-env APP_ENV='production' node ./bin/www.js",
     "debug": "cross-env APP_ENV='dev' nodemon ./bin/www.js"
   },
   "dependencies": {
