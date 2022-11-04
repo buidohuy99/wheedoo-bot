@@ -21,10 +21,10 @@ const ChatWithMe = async (question, username, client) => {
     try{
         const {data: response} = await axios_instance.get(process.env.TWITCH_API_URL + `/helix/users?login=${username}`);
         const myResponse = await getAnswerToQuestion(question, response.data[0].id);
-        postChatMessage(`@${username} ${stripHtml(myResponse).result} eggySip`, client);
+        postChatMessage(`@${username} Bot Response: ${stripHtml(myResponse).result} elisSip`, client);
     }catch{
         setTimeout(() => {
-            postChatMessage(`@${username} I\'m so sorry I cannot process your message properly. Can you try again? eggyCry`);
+            postChatMessage(`@${username} I\'m so sorry I cannot process your message properly. Can you try again? elisCry`);
         }, 1000);
     }
 }
@@ -175,7 +175,7 @@ export const message_event_processor = async (channel, userstate, message, self,
                 if(isPyramidComplete){
                     if(pyramid_width >= 3){
                         setTimeout(() => {
-                            postChatMessage(`/me POGGIES UWAAA~, nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt! HYPER`, client);
+                            postChatMessage(`/me POGGIES UWAAA~, nice ${pyramid_width}-Width  ${emoteName}  pyramid attempt! PETTHEFOBBIT`, client);
                         }, 1000); //Delay 1 sec before congrats message
                     }
                     const lastElement = pyramid[near_last_idx + 1];

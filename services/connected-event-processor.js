@@ -19,7 +19,7 @@ export const connected_event_processor = async (address, port, client) => {
         if(currentDate.getMinutes() % 30 != 0) return;
         if(response.data && response.data.length != 0) return;
 
-        client.say(process.env.TWITCH_CHANNEL, "eggySip Remember to keep yourself peepoHappy hydrated eggyDrink chat 💕");
+        client.say(process.env.TWITCH_CHANNEL, "elisSip Remember to keep yourself peepoHappy hydrated elisHug chat 💕");
     }, 60000);
 
     checkLiveInterval = setInterval(async() => {
