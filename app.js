@@ -5,19 +5,21 @@ import logger from 'morgan';
 import './utils/load-dotenv.js';
 import express from 'express';
 
-const app = express();
-
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-
 import "./utils/setupGlobals.js";
 import {clearAllMessageSchedules} from './functions/message-schedule-function.js';
 import redis from "./utils/redis.js";
 import twitch_chat_client from "./utils/tmi-connector.js";
 import {connected_event_processor} from './services/connected-event-processor.js';
 import {message_event_processor} from './services/message-event-processor.js';
+
+import indexRouter from './routes/index.js'
+
+const app = express();
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 //Init redis global vars
 const enable_sipping = await redis.get('enable_sipping_toggle');
@@ -56,7 +58,7 @@ twitch_chat_client.on('reconnect', () => {
 twitch_chat_client.connect().catch(console.error);
 console.log('++++ Finished Initializing tmi.js');
 
-import indexRouter from './routes/index.js'
+//Routers
 app.use('/', indexRouter);
 console.log('++++ Finished Initializing all endpoints of the application');
 
