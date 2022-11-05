@@ -3,20 +3,10 @@
  /**
    * Module dependencies.
    */
-import cluster from 'cluster';
 import DEBUG from 'debug';
 import http from 'http';
-const app = cluster.isPrimary ? undefined : await import('../app.js');
+import app from '../app.js';
 
-if(cluster.isPrimary){
-  cluster.fork();
-
-  cluster.on('exit', (worker, code, signal) => {
-    cluster.fork();
-  })
-}
-
-if(app){
   const debug = DEBUG('twitch-chat-bot-tectone:server');  
 
   /**
@@ -24,7 +14,7 @@ if(app){
    */
 
   const port = normalizePort(process.env.PORT || '3000');
-  app.default.set('port', port);
+  app.set('port', port);
 
   /**
    * Create HTTP server.
@@ -99,4 +89,3 @@ if(app){
       : 'port ' + addr.port;
     debug('Listening on ' + bind);
   }
-}
