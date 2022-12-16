@@ -21,7 +21,7 @@ const ChatWithMe = async (question, username, client) => {
     try{
         const {data: response} = await axios_instance.get(process.env.TWITCH_API_URL + `/helix/users?login=${username}`);
         const myResponse = await getAnswerToQuestion(question, response.data[0].id);
-        postChatMessage(`@${username} Bot Response: ${stripHtml(myResponse).result} elisSip`, client);
+        postChatMessage(`To @${username}: ${stripHtml(myResponse).result} elisSip`, client);
     }catch{
         setTimeout(() => {
             postChatMessage(`@${username} I\'m so sorry I cannot process your message properly. Can you try again? elisCry`);
@@ -31,109 +31,9 @@ const ChatWithMe = async (question, username, client) => {
 
 export const message_event_processor = async (channel, userstate, message, self, client) => {
     toggle_emote_reaction = await redis.get('emote_reaction_toggle') === 'true';
-    if(process.env.APP_ENV === 'dev') toggle_emote_reaction = true;
+    enableSipping = await redis.get('enable_sipping_toggle') === 'true';
 
     switch(channel.toLowerCase().replace("#", "")){
-        case process.env.TWITCH_USERNAME:
-            if(process.env.APP_ENV != 'production') return;
-            //#region messages from wheedoo channel
-            if(userstate.username.toLowerCase() !== process.env.TWITCH_USERNAME) return;
-            const prefix = message.substring(0, Math.min(1, message.length));
-            if(prefix !== '!') return;
-
-            const commandSeparatorLocation = message.indexOf(' ');
-            const command = message.substring(0, commandSeparatorLocation < 0 ? message.length : commandSeparatorLocation);
-            const argsString = commandSeparatorLocation < 0 ? '' : message.substring(commandSeparatorLocation + 1).trim();
-
-            switch(command.replace('!','')){
-                case 'message/schedule':
-                    if(argsString.length <= 0) { returnError('Insufficient arguments: found 0 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
-                    const indexOfFirstWhitespace = argsString.indexOf(' ');
-                    
-                    if(indexOfFirstWhitespace < 0) { returnError('Insufficient arguments: found 1 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
-                    const messageName = argsString.substring(0, indexOfFirstWhitespace);
-                    const indexOfSecondWhitespace = argsString.indexOf(' ', indexOfFirstWhitespace + 1);
-                    
-                    if(indexOfSecondWhitespace < 0) { returnError('Insufficient arguments: found 2 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
-                    const scheduledInterval = argsString.substring(indexOfFirstWhitespace + 1, indexOfSecondWhitespace);
-                    const indexOfThirdWhitespace = argsString.indexOf(' ', indexOfSecondWhitespace + 1);
-                    
-                    if(indexOfThirdWhitespace < 0) { returnError('Insufficient arguments: found 3 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
-                    const scheduledTimeSpan = argsString.substring(indexOfSecondWhitespace + 1, indexOfThirdWhitespace);
-                    const scheduledMessage = argsString.substring(indexOfThirdWhitespace + 1);
-                    
-                    if(message_schedules[messageName]){
-                        returnError(`A schedule for \'${messageName}\' already exists, please schedule this message under a different name`, client); return; 
-                    } 
-                    if(isNaN(scheduledInterval) || scheduledInterval < 1.6 || scheduledInterval > 86400){
-                        returnError(`Scheduled interval is not a number or is not within the value range of 1.6 seconds to 86400 seconds`, client); return; 
-                    }
-                    if(isNaN(scheduledTimeSpan) || scheduledTimeSpan < 10){
-                        returnError(`Scheduled timespan is not a number or is shorter than 10 seconds`, client); return; 
-                    }
-
-                    let transformedMessage = scheduledMessage;
-                    const concatMessage = () => transformedMessage = transformedMessage.concat(' \udb40\udc00');
-                    const resetMessage = () => transformedMessage = scheduledMessage;
-                    message_schedules[messageName] = setInterval(() => {
-                        postChatMessage(transformedMessage, client);
-                        concatMessage();
-                    }, scheduledInterval * 1000);
-                    reset_message_intervals[messageName] = setInterval(() => {
-                        resetMessage();
-                    }, 30000 + 250);
-                    message_schedules_info[messageName] = {
-                        interval: scheduledInterval,
-                        timespan: scheduledTimeSpan,
-                        message: scheduledMessage
-                    };
-
-                    setTimeout(() => {
-                        clearMessageSchedule(messageName);
-                        returnMessage(`\'${messageName}\' has ended its run successfully`, client);
-                    }, scheduledTimeSpan * 1000 + 1000);
-                    toggle_emote_reaction = false;
-                    returnMessage(`Successfully schedules \'${messageName}\' with an interval of ${scheduledInterval} seconds`, client);
-                    break;
-
-                case 'message/unschedule':
-                    if(argsString.length <= 0) { returnError('Insufficient arguments: found 0 argument(s)', client); return; }
-                    if(!message_schedules[argsString]) { returnError(`Schedule named \'${argsString}\' cannot be found`, client); return; }
-                    clearMessageSchedule(argsString);
-                    toggle_emote_reaction = true;
-                    returnMessage(`Successfully unschedules \'${argsString}\'`, client);
-                    break;
-
-                case 'messages/clear-all':
-                    clearAllMessageSchedules();
-                    toggle_emote_reaction = true;
-                    returnMessage(`Successfully clears all message schedules`, client);
-                    break;
-
-                case 'message/enable-hydrate':
-                    await redis.set('enable_sipping_toggle', (true).toString());
-                    enableSipping = true;
-                    returnMessage(`Successfully enables hydrate reminder`, client);
-                    break;
-                
-                case 'message/disable-hydrate':
-                    await redis.set('enable_sipping_toggle', (false).toString());
-                    enableSipping = false;
-                    returnMessage(`Successfully disables hydrate reminder`, client);
-                    break;
-
-                case 'emote-reaction/toggle':
-                    toggle_emote_reaction = !toggle_emote_reaction;
-                    await redis.set('emote_reaction_toggle', (toggle_emote_reaction).toString());
-                    returnMessage(`Successfully ${toggle_emote_reaction ? "enables" : "disables"} emote reaction function`, client);
-                    break;
-
-                default:
-                    returnError('Command cannot be identified', client);
-                    break;
-            }
-            //#endregion
-            break;
         case process.env.TWITCH_CHANNEL:
             messages_this_interval++;
             //#region pyramid evaluator
@@ -277,7 +177,7 @@ export const message_event_processor = async (channel, userstate, message, self,
                     }
                     const exec_cooldown_if_emote_count_enough = (emote, client) => { 
                         const messagesBeforeReaction = messages_per_ten_second >= 3 ? 
-                        (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 7 : 5) : 4) : 3; 
+                        (messages_per_ten_second >= 5 ? (messages_per_ten_second >= 7 ? 7 : 6) : 5) : 4; 
                         if(current_spammed_messages[emote.name] >= messagesBeforeReaction){
                             currently_on_cooldown_emotes[emote.name] = true;
                             clearInterval(emote_reset_count_timeout[emote.name].interval);
@@ -321,8 +221,10 @@ export const message_event_processor = async (channel, userstate, message, self,
             //#region Evaluate command and provide proper functionalities
             const botName = `@${process.env.TWITCH_USERNAME}`;
             if(message.includes(botName)){
-                let rawMessage = message.replaceAll(botName, "").trim();
+                let rawMessage = message.replaceAll(botName, "");
+                rawMessage = rawMessage.replace(/^[^a-zA-Z0-9! ]*/g, '');
                 const firstIdxOfPrefix = rawMessage.indexOf('!');
+                if(firstIdxOfPrefix !== 1) return;
                 rawMessage = rawMessage.substring(firstIdxOfPrefix);
                 const prefix = rawMessage.substring(0, Math.min(1, rawMessage.length));
                 if(prefix !== '!') return;
@@ -336,6 +238,100 @@ export const message_event_processor = async (channel, userstate, message, self,
                         ChatWithMe(argsString, userstate.username, client);
                         break;
                 }
+            }
+            //#endregion
+            break;
+        case process.env.TWITCH_USERNAME:
+            if(process.env.APP_ENV != 'production') return;
+            //#region messages from wheedoo channel
+            if(userstate.username.toLowerCase() !== process.env.TWITCH_USERNAME) return;
+            const prefix = message.substring(0, Math.min(1, message.length));
+            if(prefix !== '!') return;
+
+            const commandSeparatorLocation = message.indexOf(' ');
+            const command = message.substring(0, commandSeparatorLocation < 0 ? message.length : commandSeparatorLocation);
+            const argsString = commandSeparatorLocation < 0 ? '' : message.substring(commandSeparatorLocation + 1).trim();
+
+            switch(command.replace('!','')){
+                case 'message/schedule':
+                    if(argsString.length <= 0) { returnError('Insufficient arguments: found 0 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
+                    const indexOfFirstWhitespace = argsString.indexOf(' ');
+                    
+                    if(indexOfFirstWhitespace < 0) { returnError('Insufficient arguments: found 1 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
+                    const messageName = argsString.substring(0, indexOfFirstWhitespace);
+                    const indexOfSecondWhitespace = argsString.indexOf(' ', indexOfFirstWhitespace + 1);
+                    
+                    if(indexOfSecondWhitespace < 0) { returnError('Insufficient arguments: found 2 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
+                    const scheduledInterval = argsString.substring(indexOfFirstWhitespace + 1, indexOfSecondWhitespace);
+                    const indexOfThirdWhitespace = argsString.indexOf(' ', indexOfSecondWhitespace + 1);
+                    
+                    if(indexOfThirdWhitespace < 0) { returnError('Insufficient arguments: found 3 argument(s), requires 4 arguments (name - interval - timespan - message)', client); return; }
+                    const scheduledTimeSpan = argsString.substring(indexOfSecondWhitespace + 1, indexOfThirdWhitespace);
+                    const scheduledMessage = argsString.substring(indexOfThirdWhitespace + 1);
+                    
+                    if(message_schedules[messageName]){
+                        returnError(`A schedule for \'${messageName}\' already exists, please schedule this message under a different name`, client); return; 
+                    } 
+                    if(isNaN(scheduledInterval) || scheduledInterval < 1.6 || scheduledInterval > 86400){
+                        returnError(`Scheduled interval is not a number or is not within the value range of 1.6 seconds to 86400 seconds`, client); return; 
+                    }
+                    if(isNaN(scheduledTimeSpan) || scheduledTimeSpan < 10){
+                        returnError(`Scheduled timespan is not a number or is shorter than 10 seconds`, client); return; 
+                    }
+
+                    let transformedMessage = scheduledMessage;
+                    const concatMessage = () => transformedMessage = transformedMessage.concat(' \udb40\udc00');
+                    const resetMessage = () => transformedMessage = scheduledMessage;
+                    message_schedules[messageName] = setInterval(() => {
+                        postChatMessage(transformedMessage, client);
+                        concatMessage();
+                    }, scheduledInterval * 1000);
+                    reset_message_intervals[messageName] = setInterval(() => {
+                        resetMessage();
+                    }, 30000 + 250);
+                    message_schedules_info[messageName] = {
+                        interval: scheduledInterval,
+                        timespan: scheduledTimeSpan,
+                        message: scheduledMessage
+                    };
+
+                    setTimeout(() => {
+                        clearMessageSchedule(messageName);
+                        returnMessage(`\'${messageName}\' has ended its run successfully`, client);
+                    }, scheduledTimeSpan * 1000 + 1000);
+                    toggle_emote_reaction = false;
+                    returnMessage(`Successfully schedules \'${messageName}\' with an interval of ${scheduledInterval} seconds`, client);
+                    break;
+
+                case 'message/unschedule':
+                    if(argsString.length <= 0) { returnError('Insufficient arguments: found 0 argument(s)', client); return; }
+                    if(!message_schedules[argsString]) { returnError(`Schedule named \'${argsString}\' cannot be found`, client); return; }
+                    clearMessageSchedule(argsString);
+                    toggle_emote_reaction = true;
+                    returnMessage(`Successfully unschedules \'${argsString}\'`, client);
+                    break;
+
+                case 'messages/clear-all':
+                    clearAllMessageSchedules();
+                    toggle_emote_reaction = true;
+                    returnMessage(`Successfully clears all message schedules`, client);
+                    break;
+
+                case 'message/toggle-hydrate':
+                    enableSipping = !enableSipping;
+                    await redis.set('enable_sipping_toggle', (enableSipping).toString());
+                    returnMessage(`Successfully ${enableSipping ? "enables" : "disables"} hydrate reminder`, client);
+                    break;
+
+                case 'emote-reaction/toggle':
+                    toggle_emote_reaction = !toggle_emote_reaction;
+                    await redis.set('emote_reaction_toggle', (toggle_emote_reaction).toString());
+                    returnMessage(`Successfully ${toggle_emote_reaction ? "enables" : "disables"} emote reaction function`, client);
+                    break;
+
+                default:
+                    returnError('Command cannot be identified', client);
+                    break;
             }
             //#endregion
             break;

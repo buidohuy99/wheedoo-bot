@@ -175,5 +175,17 @@
     },
     {
         "name": "pepeGun"
+    },
+    {
+        "name": "peepoKnife",
+        "compPos": "right"
+    },
+    {
+        "name": "GunL",
+        "compPos": "left"
+    },
+    {
+        "name": "GunR",
+        "compPos": "right"
     }
 ]
